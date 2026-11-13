@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Slide Thuyết Trình - Superstore BI Dashboard</title>
+  <title>Slide Thuyết Trình - Superstore BI &amp; AI Dashboard (16 Slides)</title>
   <style>
     :root {
       --bg: #f8fafc;
@@ -28,8 +28,8 @@
       overflow: hidden;
     }
     .deck {
-      width: min(1100px, 94vw);
-      height: min(640px, 84vh);
+      width: min(1140px, 95vw);
+      height: min(660px, 85vh);
       position: relative;
     }
     .slide {
@@ -38,7 +38,7 @@
       height: 100%;
       background: var(--card);
       border-radius: 16px;
-      padding: 44px 56px;
+      padding: 40px 52px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
       flex-direction: column;
       justify-content: space-between;
@@ -51,8 +51,8 @@
       justify-content: center;
       text-align: left;
     }
-    .slide.title-slide h1 { font-size: 2.5rem; margin-bottom: 18px; line-height: 1.2; }
-    .slide.title-slide p { color: #cbd5e1; font-size: 1.15rem; margin-bottom: 10px; }
+    .slide.title-slide h1 { font-size: 2.35rem; margin-bottom: 18px; line-height: 1.25; }
+    .slide.title-slide p { color: #cbd5e1; font-size: 1.1rem; margin-bottom: 10px; }
     .tag {
       display: inline-block;
       background: rgba(59, 130, 246, 0.25);
@@ -60,47 +60,47 @@
       padding: 6px 14px;
       border-radius: 999px;
       font-size: 0.9rem;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       font-weight: 600;
     }
     .header {
       border-bottom: 2px solid var(--border);
-      padding-bottom: 14px;
-      margin-bottom: 22px;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
       display: flex;
       justify-content: space-between;
       align-items: baseline;
     }
-    .header h2 { font-size: 1.65rem; color: var(--primary); }
+    .header h2 { font-size: 1.55rem; color: var(--primary); }
     .header span { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
-    .content { flex: 1; font-size: 1.05rem; line-height: 1.65; }
+    .content { flex: 1; font-size: 1.02rem; line-height: 1.6; }
     ul { padding-left: 22px; }
-    li { margin-bottom: 10px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px; }
+    li { margin-bottom: 8px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 10px; }
     .box {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 18px 20px;
+      padding: 16px 18px;
     }
-    .box h3 { font-size: 1.05rem; color: var(--accent); margin-bottom: 8px; }
-    .metric { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+    .box h3 { font-size: 1.02rem; color: var(--accent); margin-bottom: 8px; }
+    .metric { font-size: 1.65rem; font-weight: 700; color: var(--primary); }
     .danger { color: var(--danger); font-weight: 700; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.95rem; }
-    th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.92rem; }
+    th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
     th { background: #eff6ff; color: var(--primary); }
     .footer {
       border-top: 1px solid var(--border);
       padding-top: 10px;
-      margin-top: 16px;
+      margin-top: 14px;
       display: flex;
       justify-content: space-between;
       font-size: 0.85rem;
       color: var(--muted);
     }
     .controls {
-      margin-top: 16px;
+      margin-top: 14px;
       display: flex;
       align-items: center;
       gap: 16px;
@@ -129,224 +129,283 @@
     <!-- Slide 1 -->
     <section class="slide title-slide active">
       <div>
-        <span class="tag">BÁO CÁO BÀI TẬP LỚN • PHÂN TÍCH & TRỰC QUAN HÓA DỮ LIỆU</span>
-        <h1>Phân tích Dữ liệu Bán lẻ Superstore &amp; Xây dựng Dashboard Streamlit 5 Trang</h1>
-        <p><strong>Bộ dữ liệu:</strong> Kaggle Superstore Sales Dataset (9.994 dòng × 21 cột)</p>
-        <p><strong>Công nghệ:</strong> Python, Pandas, Plotly, Streamlit, GitHub</p>
-        <p><strong>Nhóm thực hiện:</strong> [Tên nhóm / 5 thành viên phụ trách Page 1–5]</p>
+        <span class="tag">BÁO CÁO BÀI TẬP LỚN • TRỰC QUAN &amp; PHÂN TÍCH DỮ LIỆU</span>
+        <h1>Hệ thống Phân tích Dữ liệu Kinh doanh, Kinh tế lượng &amp; AI Dashboard Tương tác trên Tập dữ liệu Superstore</h1>
+        <p><strong>Bộ dữ liệu:</strong> Kaggle Superstore Sales Dataset (9.994 dòng × 21 cột + 8 biến phái sinh)</p>
+        <p><strong>Công nghệ:</strong> Python, Pandas, SciPy, Statsmodels, Scikit-learn, Plotly, Streamlit, Gemini 2.5 Flash / Oxion AI</p>
+        <p><strong>Quy mô:</strong> Executive Command Center + 5 Phân hệ Chuyên sâu + 5 Mô-đun Khoa học &amp; Kinh tế lượng</p>
       </div>
     </section>
 
     <!-- Slide 2 -->
     <section class="slide">
-      <div class="header"><h2>1. Giới thiệu bài toán khách hàng</h2><span>Slide 2 / 14</span></div>
+      <div class="header"><h2>1. Bài toán Kinh doanh &amp; 5 Câu hỏi Nghiên cứu (RQs)</h2><span>Slide 2 / 16</span></div>
       <div class="content">
-        <div class="grid-2">
-          <div class="box">
-            <h3>Bối cảnh doanh nghiệp</h3>
-            <ul>
-              <li>Chuỗi bán lẻ Superstore tại Hoa Kỳ vận hành trên 4 khu vực, 49 tiểu bang và 3 ngành hàng chính.</li>
-              <li>Dữ liệu giao dịch lớn (2014–2017) chưa có công cụ trực quan hóa tự động cho cấp quản lý.</li>
-            </ul>
-          </div>
-          <div class="box">
-            <h3>Câu hỏi kinh doanh cốt lõi</h3>
-            <ul>
-              <li>Doanh thu và lợi nhuận tăng trưởng ra sao theo thời gian?</li>
-              <li>Khu vực, phân khúc và sản phẩm nào mang lại lợi nhuận cao nhất?</li>
-              <li>Chính sách chiết khấu hiện tại có đang gây thua lỗ không?</li>
-            </ul>
-          </div>
-        </div>
+        <ul>
+          <li><strong>Bối cảnh thực tiễn:</strong> Chuỗi bán lẻ đa kênh Superstore vận hành trên 49 tiểu bang Hoa Kỳ (2014–2017) với doanh thu tăng trưởng đều đặn nhưng biên lợi nhuận bị bào mòn nghiêm trọng ở nhiều vùng và nhóm hàng.</li>
+          <li><strong>RQ1 (Thống kê suy luận):</strong> Ngưỡng chiết khấu nào là "điểm gãy" gây thua lỗ, và sự khác biệt đó có ý nghĩa thống kê (<em>p-value</em>, <em>Cohen's d</em>) không?</li>
+          <li><strong>RQ2 (Địa lý &amp; Danh mục):</strong> Tại sao vùng <code>Central</code> (đặc biệt bang <strong>Texas</strong>) và ngành <code>Furniture</code> (<code>Tables</code>, <code>Bookcases</code>) doanh thu cao nhưng lỗ nặng?</li>
+          <li><strong>RQ3 (Chuỗi thời gian):</strong> Doanh thu tháng có tính dừng (ADF Test) không, cấu trúc mùa vụ ra sao và mô hình nào dự báo chính xác nhất trên tập Hold-out 6 tháng?</li>
+          <li><strong>RQ4 &amp; RQ5 (Học máy &amp; Kinh tế lượng):</strong> Làm sao định lượng xác suất sống sót <code>P(Alive)</code>, <code>CLV 12M</code>, rủi ro đơn lỗ (Explainable ML) và tối ưu trần chiết khấu khi cầu co giãn theo giá (<code>ε &lt; 0</code>)?</li>
+        </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Bài toán khách hàng</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Bài toán &amp; Câu hỏi nghiên cứu</span></div>
     </section>
 
     <!-- Slide 3 -->
     <section class="slide">
-      <div class="header"><h2>2. Mô tả bộ dữ liệu (Superstore Dataset)</h2><span>Slide 3 / 14</span></div>
+      <div class="header"><h2>2. Mô tả Tập dữ liệu &amp; Từ điển 21 Biến</h2><span>Slide 3 / 16</span></div>
       <div class="content">
         <div class="grid-3">
-          <div class="box"><h3>Quy mô dữ liệu</h3><div class="metric">9.994 × 21</div><p>5.009 đơn hàng • 793 khách hàng • 1.862 sản phẩm</p></div>
-          <div class="box"><h3>Tổng doanh thu</h3><div class="metric">$2.30M</div><p>Chính xác: 2,297,200.86 USD</p></div>
-          <div class="box"><h3>Tổng lợi nhuận</h3><div class="metric">$286.4K</div><p>Biên lợi nhuận chung: 12.47%</p></div>
+          <div class="box"><h3>Quy mô dữ liệu</h3><div class="metric">9.993 × 21</div><p>5.009 đơn hàng • 793 khách hàng • 1.862 sản phẩm</p></div>
+          <div class="box"><h3>Tổng doanh thu</h3><div class="metric">$2.30M</div><p>Chính xác: $2,297,200.86 (AOV: $458.61)</p></div>
+          <div class="box"><h3>Tổng lợi nhuận</h3><div class="metric">$286.4K</div><p>Biên lợi nhuận ròng: 12.47%</p></div>
         </div>
-        <ul style="margin-top: 18px;">
-          <li><strong>Thông tin đơn hàng:</strong> <code>Row ID</code>, <code>Order ID</code>, <code>Order Date</code>.</li>
-          <li><strong>Khách hàng &amp; Giao hàng:</strong> <code>Customer ID</code>, <code>Customer Name</code>, <code>Segment</code>, <code>Ship Date</code>, <code>Ship Mode</code>, <code>Country</code>, <code>City</code>, <code>State</code>, <code>Postal Code</code>, <code>Region</code>.</li>
-          <li><strong>Sản phẩm &amp; Tài chính:</strong> <code>Product ID</code>, <code>Category</code>, <code>Sub-Category</code>, <code>Product Name</code>, <code>Sales</code>, <code>Quantity</code>, <code>Discount</code>, <code>Profit</code>.</li>
+        <ul style="margin-top: 16px;">
+          <li><strong>Định danh &amp; Thời gian:</strong> <code>Row ID</code>, <code>Order ID</code>, <code>Order Date</code>, <code>Ship Date</code>, <code>Ship Mode</code> (+ phái sinh <code>Shipping_Days</code>, <code>Order_Year</code>, <code>Order_Quarter</code>).</li>
+          <li><strong>Khách hàng &amp; Địa lý:</strong> <code>Customer ID</code>, <code>Customer Name</code>, <code>Segment</code>, <code>Country</code>, <code>Region</code>, <code>State</code>, <code>City</code>, <code>Postal Code</code> (+ <code>State_Code</code> chuẩn ANSI 2 ký tự).</li>
+          <li><strong>Sản phẩm &amp; Tài chính:</strong> <code>Product ID</code>, <code>Category</code>, <code>Sub-Category</code> (17 nhóm), <code>Product Name</code>, <code>Sales</code>, <code>Quantity</code>, <code>Discount</code>, <code>Profit</code> (+ <code>Implied_Cost</code>, <code>Gross_Price</code>).</li>
         </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Mô tả dữ liệu</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Mô tả dữ liệu &amp; Data Dictionary</span></div>
     </section>
 
     <!-- Slide 4 -->
     <section class="slide">
-      <div class="header"><h2>3. Quy trình làm sạch &amp; Tiền xử lý (EDA — 25%)</h2><span>Slide 4 / 14</span></div>
+      <div class="header"><h2>3. Kiểm toán Chất lượng &amp; Tiền xử lý Dữ liệu (EDA — 25%)</h2><span>Slide 4 / 16</span></div>
       <div class="content">
         <ul>
-          <li><strong>Đọc &amp; Kiểm tra thiếu dữ liệu:</strong> Đọc file với bảng mã <code>windows-1252</code>; kết quả <strong>0 giá trị Null</strong> trên toàn bộ 21 cột.</li>
-          <li><strong>Xử lý trùng lặp:</strong> Phát hiện và loại bỏ <strong>1 bản ghi trùng lặp nghiệp vụ</strong> (tại <code>Row ID = 3407</code>), còn <strong>9.993 dòng</strong> hợp lệ.</li>
-          <li><strong>Chuẩn hóa kiểu dữ liệu:</strong> Chuyển <code>Order Date</code>, <code>Ship Date</code> sang <code>datetime64</code>; chuẩn hóa <code>Postal Code</code> dạng chuỗi 5 ký tự.</li>
-          <li><strong>Feature Engineering:</strong> Tạo <code>Order_Year</code>, <code>Order_YearMonth</code>, <code>Order_Quarter</code>, <code>Shipping_Days</code>, <code>Profit_Margin_Pct</code>.</li>
-          <li><strong>Xử lý ngoại lệ (IQR):</strong> Gắn cờ ngoại lệ cho <code>Sales</code> (1.167 điểm) &amp; <code>Profit</code> (1.881 điểm), kèm tùy chọn <em>Winsorize</em> trên Sidebar.</li>
+          <li><strong>Kiểm tra Null &amp; Bảng mã:</strong> Tự động nhận diện <code>utf-8 / cp1252</code>; xác nhận <strong>0 giá trị khuyết thiếu (Missing/Null)</strong> trên toàn bộ 21 cột.</li>
+          <li><strong>Khử trùng lặp khóa nghiệp vụ:</strong> Phát hiện và loại bỏ <strong>01 bản ghi trùng lặp nghiệp vụ</strong> tại đơn <code>US-2014-150119</code> (<code>Row ID = 3407</code>, ngày 23/04/2014 tại Ohio), giữ lại <strong>9.993 dòng sạch</strong>.</li>
+          <li><strong>Chuẩn hóa kiểu dữ liệu:</strong> Chuyển <code>Order Date</code>, <code>Ship Date</code> sang <code>datetime64</code> (100% thỏa <code>Ship Date ≥ Order Date</code>, TB 3.96 ngày); chuẩn hóa <code>Postal Code</code> đủ 5 ký tự (<code>zfill(5)</code>).</li>
+          <li><strong>Phát hiện Ngoại lệ (1.5 × IQR) &amp; Lý giải B2B:</strong> Phát hiện 1.167 ngoại lệ <code>Sales</code> (&gt;$498.93) và 1.881 ngoại lệ <code>Profit</code> (&lt;-$39.72 hoặc &gt;+$70.82). <strong>Không xóa ngoại lệ</strong> vì đây là các đơn hàng B2B lô lớn hoặc đơn xả kho thật; trang bị nút bật/tắt <strong>IQR Winsorize</strong> trên Sidebar.</li>
         </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Làm sạch dữ liệu</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Kiểm toán &amp; Làm sạch dữ liệu</span></div>
     </section>
 
     <!-- Slide 5 -->
     <section class="slide">
-      <div class="header"><h2>4. Thống kê tổng hợp (GroupBy &amp; Pivot Table)</h2><span>Slide 5 / 14</span></div>
+      <div class="header"><h2>4. Tổng hợp Đa chiều với GroupBy &amp; Pivot Table</h2><span>Slide 5 / 16</span></div>
       <div class="content">
         <table>
-          <thead><tr><th>Chiều phân tích</th><th>Phát hiện nổi bật từ GroupBy &amp; Pivot Table</th></tr></thead>
+          <thead><tr><th>Chiều phân tích</th><th>Kết quả định lượng từ GroupBy &amp; Pivot Table</th></tr></thead>
           <tbody>
-            <tr><td><strong>Theo Năm (2014–2017)</strong></td><td>Doanh thu: $484.0K (2014) → $470.5K (2015, điều chỉnh) → $609.2K (2016) → $733.2K (2017); đơn hàng tăng từ 969 lên 1.687 đơn.</td></tr>
-            <tr><td><strong>Theo Khu vực (Region)</strong></td><td>West ($725.5K; biên 14.94%) &amp; East ($678.8K; biên 13.48%) dẫn đầu; Central biên thấp nhất (7.92%).</td></tr>
-            <tr><td><strong>Theo Danh mục (Category)</strong></td><td>Technology ($145.5K lợi nhuận) &amp; Office Supplies ($122.5K) sinh lời tốt; Furniture chỉ đạt biên 2.49%.</td></tr>
-            <tr><td><strong>Pivot Region × Category</strong></td><td>Xác định rõ thế mạnh từng ngành hàng tại từng vùng thị trường để phân bổ tồn kho hợp lý.</td></tr>
+            <tr><td><strong>Theo Năm (2014–2017)</strong></td><td>2014 ($484.2K) → 2015 ($470.5K, doanh thu giảm nhẹ 2.83% nhưng <strong>lợi nhuận tăng +24.3% lên $61.6K</strong>) → 2016 ($609.2K) → 2017 (đạt đỉnh <strong>$733.2K</strong>, LN $93.4K).</td></tr>
+            <tr><td><strong>Theo Khu vực (Region)</strong></td><td><code>West</code> ($725.5K; biên 14.94%) &amp; <code>East</code> ($678.8K; biên 13.48%) tạo gần 70% tổng lợi nhuận; <code>Central</code> có biên lợi nhuận thấp nhất (<strong>7.92%</strong>).</td></tr>
+            <tr><td><strong>Theo Ngành hàng (Category)</strong></td><td><code>Technology</code> (+$145.5K, biên 17.40%) &amp; <code>Office Supplies</code> (+$122.5K, biên 17.04%) dẫn đầu; <code>Furniture</code> doanh thu $742.0K nhưng biên LN chỉ <strong>2.49%</strong> ($18.5K).</td></tr>
+            <tr><td><strong>Pivot Table 2 Chiều</strong></td><td>Ma trận <code>Region × Category</code> &amp; <code>Year × Segment</code> được lưu đệm bằng <code>@st.cache_data</code> giúp đối chiếu tức thì.</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>GroupBy &amp; Pivot Table</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>GroupBy &amp; Pivot Table</span></div>
     </section>
 
     <!-- Slide 6 -->
     <section class="slide">
-      <div class="header"><h2>5. Kiến trúc hệ thống (Clean Architecture)</h2><span>Slide 6 / 14</span></div>
+      <div class="header"><h2>5. Kiến trúc Clean Architecture &amp; Executive Command Center</h2><span>Slide 6 / 16</span></div>
       <div class="content">
         <div class="grid-2">
           <div class="box">
-            <h3>Tách module 4 tầng</h3>
+            <h3>Kiến trúc 4 Tầng Chuẩn SaaS</h3>
             <ul>
-              <li><code>data/</code>: <code>loader.py</code> (CSV, làm sạch, <code>@st.cache_data</code>) &amp; <code>analytics.py</code> (Forecast, RFM, Apriori).</li>
-              <li><code>components/</code> &amp; <code>utils/</code>: Đồng bộ <code>st.session_state</code>, Sidebar dùng chung &amp; Gemini 2.5 Flash Chatbot.</li>
+              <li><code>data/</code>: <code>loader.py</code> (Đọc CSV gốc &amp; <strong>Nạp tệp CSV tùy chỉnh</strong>, Data Dictionary) &amp; <code>analytics.py</code> (&gt;25 hàm phân tích, kinh tế lượng &amp; ML).</li>
+              <li><code>components/</code> &amp; <code>utils/</code>: Đồng bộ <code>st.session_state</code>, giao diện SaaS, <strong>Dynamic Auto-Insight Banner</strong> &amp; Chatbot AI B2B.</li>
             </ul>
           </div>
           <div class="box">
-            <h3>5 Trang chức năng (<code>pages/</code>)</h3>
+            <h3>Executive Command Center (<code>app.py</code>)</h3>
             <ul>
-              <li><strong>Page 1:</strong> KPI (<code>st.metric</code>) + <strong>Phân khúc RFM</strong></li>
-              <li><strong>Page 2:</strong> Line chart + <strong>Dự báo Prophet / ARIMA</strong></li>
-              <li><strong>Page 3:</strong> Bar chart + <code>multiselect</code> + <strong>Bản đồ Mỹ</strong></li>
-              <li><strong>Page 4:</strong> Top N + <strong>Sunburst</strong> + <strong>Apriori</strong></li>
-              <li><strong>Page 5:</strong> UX, Cache &amp; <strong>Gemini AI Chatbot</strong></li>
+              <li>6 thẻ KPI kèm tốc độ tăng trưởng YoY.</li>
+              <li>Biểu đồ kết hợp Doanh thu &amp; Biên lợi nhuận theo Quý.</li>
+              <li>Đối sánh Top 5 bang lãi cao nhất vs. Top 5 bang lỗ nặng nhất.</li>
+              <li>3 Tab Kiểm toán dữ liệu, Từ điển 21 cột &amp; Thống kê <code>.describe()</code>.</li>
             </ul>
           </div>
         </div>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Kiến trúc hệ thống</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Kiến trúc hệ thống</span></div>
     </section>
 
     <!-- Slide 7 -->
     <section class="slide">
-      <div class="header"><h2>6. Page 1 — Tổng quan kinh doanh &amp; RFM</h2><span>Slide 7 / 14</span></div>
+      <div class="header"><h2>6. Page 1 — Tổng quan, Phân phối &amp; Kiểm định Giả thuyết Thống kê</h2><span>Slide 7 / 16</span></div>
       <div class="content">
         <ul>
-          <li><strong>Mục tiêu:</strong> Theo dõi KPI tài chính tức thời và phân loại khách hàng để cá nhân hóa chăm sóc.</li>
-          <li><strong>Triển khai kỹ thuật:</strong> Dùng <code>st.metric</code> (Doanh thu, Đơn hàng, Số lượng) kết hợp <strong>mô hình RFM</strong> tự động gắn nhãn <em>VIP</em>, <em>Khách hàng trung thành</em>, <em>Khách hàng mới</em>, <em>Nguy cơ rời bỏ</em>.</li>
-          <li><strong>Insight:</strong> Phân khúc <code>Consumer</code> chiếm 50.56% doanh thu; nhóm <em>Nguy cơ rời bỏ</em> cần chiến dịch giữ chân sớm.</li>
+          <li><strong>Trực quan hóa Cơ cấu &amp; Phân phối:</strong> Biểu đồ Donut, <strong>Grouped / Stacked Bar</strong> (<code>Segment × Category</code>) và cặp <strong>Histogram + Boxplot</strong> phân tích độ lệch phải (Skewness) &amp; ngoại lệ.</li>
+          <li><strong>Kiểm định Giả thuyết 1 (Nhóm <code>Discount ≤ 20%</code> vs. <code>Discount &gt; 20%</code>):</strong>
+            <ul>
+              <li>Welch's <em>t</em>-test: <strong>t = 16.14</strong> (<em>p = 2.44 × 10<sup>-54</sup></em>) | Mann-Whitney <em>U</em>: <strong>U = 11,473,490</strong> (<em>p &lt; 10<sup>-100</sup></em>) | Độ lớn hiệu ứng <strong>Cohen's d = 0.64</strong> → Bác bỏ hoàn toàn H<sub>0</sub>.</li>
+            </ul>
+          </li>
+          <li><strong>Kiểm định Giả thuyết 2 (Khác biệt lợi nhuận giữa 4 Khu vực):</strong> One-way ANOVA đạt <em>F = 2.62 (p = 0.0488)</em>, nhưng kiểm định phi tham số <strong>Kruskal-Wallis đạt H = 227.84 (p = 4.06 × 10<sup>-49</sup>)</strong>.</li>
+          <li><strong>Đối sánh Tương quan Pearson (r) vs. Spearman (ρ):</strong> Cặp <code>Discount ↔ Profit</code> có <em>r = -0.2195</em> nhưng <strong>ρ = -0.5432 (p &lt; 10<sup>-100</sup>)</strong> → Quan hệ đơn điệu phi tuyến (gãy khúc tại 20%).</li>
         </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Page 1</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Page 1 — Kiểm định thống kê</span></div>
     </section>
 
     <!-- Slide 8 -->
     <section class="slide">
-      <div class="header"><h2>7. Page 2 — Xu hướng &amp; Dự báo (Prophet / ARIMA)</h2><span>Slide 8 / 14</span></div>
+      <div class="header"><h2>7. Page 1 (Tiếp) — RFM, K-Means 3D &amp; Dự báo Xác suất Sống sót P(Alive) / CLV</h2><span>Slide 8 / 16</span></div>
       <div class="content">
-        <ul>
-          <li><strong>Mục tiêu:</strong> Phát hiện mùa vụ lịch sử và dự báo doanh thu 3–6 tháng tiếp theo.</li>
-          <li><strong>Triển khai kỹ thuật:</strong> Biểu đồ đường <strong>Plotly</strong> với <code>st.date_input</code> &amp; <code>st.slider</code>, tích hợp <strong>Prophet / ARIMA</strong> vẽ đường nét đứt dự báo kèm vùng tin cậy.</li>
-          <li><strong>Insight:</strong> Doanh thu đạt đỉnh vào Quý 4 hằng năm (tháng 11–12) và xu hướng dự báo tiếp tục tăng trưởng.</li>
+        <div class="grid-3">
+          <div class="box"><h3>Tổng CLV dự báo (12M)</h3><div class="metric">$475.1K</div><p>Chính xác: $475,148.00 trên 793 khách hàng</p></div>
+          <div class="box"><h3>Doanh thu Rủi ro (At Risk)</h3><div class="metric" style="color: var(--danger);">$287.8K</div><p>Cần chiến dịch giữ chân ưu tiên</p></div>
+          <div class="box"><h3>Xác suất P(Alive) TB</h3><div class="metric" style="color: var(--accent);">62.6%</div><p>Chu kỳ mua lặp lại IPT: 128.8 ngày</p></div>
+        </div>
+        <ul style="margin-top: 14px;">
+          <li><strong>Phân khúc RFM &amp; Cohort Retention:</strong> Phân loại 793 khách hàng thành 6 phân khúc hành vi và lập ma trận tỷ lệ giữ chân khách hàng theo năm gia nhập (2014–2017).</li>
+          <li><strong>Phân cụm Học máy K-Means 3D có Biện luận Chọn k:</strong> Chuẩn hóa Z-score không gian 3 chiều và vẽ biểu đồ <strong>Elbow (Inertia) + Silhouette Score</strong> (k = 2 → 6) để chọn số cụm khách quan.</li>
         </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Page 2</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Page 1 — RFM, K-Means &amp; CLV</span></div>
     </section>
 
     <!-- Slide 9 -->
     <section class="slide">
-      <div class="header"><h2>8. Page 3 — Khu vực &amp; Bản đồ Địa lý Hoa Kỳ</h2><span>Slide 9 / 14</span></div>
+      <div class="header"><h2>8. Page 2 — Chuỗi thời gian, Kiểm định ADF &amp; Dự báo SARIMAX</h2><span>Slide 9 / 16</span></div>
       <div class="content">
         <ul>
-          <li><strong>Mục tiêu:</strong> So sánh hiệu suất 4 vùng và quan sát phân bố trực quan trên bản đồ từng tiểu bang.</li>
-          <li><strong>Triển khai kỹ thuật:</strong> Biểu đồ cột <strong>Plotly</strong> + <code>st.multiselect</code> đa khu vực + <strong>Bản đồ Choropleth Hoa Kỳ</strong> hỗ trợ zoom và hover chi tiết.</li>
-          <li><strong>Insight:</strong> <code>West</code> và <code>East</code> tạo gần 70% lợi nhuận; <code>Central</code> biên lợi nhuận thấp (7.92%), điển hình là Texas lỗ nặng do chiết khấu.</li>
+          <li><strong>Kiểm định Tính dừng Augmented Dickey-Fuller (ADF) &amp; Phân rã 4 Tầng:</strong>
+            <ul>
+              <li>Chuỗi gốc (<em>d = 0</em>): <code>ADF = -4.4936 (p = 0.0002)</code> | Sai phân bậc 1 (<em>ΔY<sub>t</sub>, d = 1</em>): <strong><code>ADF = -8.0522 (p &lt; 0.0001)</code></strong> (vượt xa ngưỡng tới hạn 5% là <code>-2.9283</code>).</li>
+              <li>Phân rã cộng tính 4 tầng (<code>Observed = Trend + Seasonal + Residual</code>) làm rõ chu kỳ đỉnh Quý 4 (tháng 9, 11, 12).</li>
+            </ul>
+          </li>
+          <li><strong>Đánh giá Sai số Dự báo trên 6 Tháng Giữ lại (Out-of-sample Hold-out Validation):</strong>
+            <ul>
+              <li><code>SARIMAX(1,1,0)(1,1,0,12)</code> (tối ưu Powell): <strong>MAE = $14,715.73 | MAPE = 17.50%</strong>.</li>
+              <li><code>Seasonal Linear Trend</code>: <strong>MAE = $13,417.35 | MAPE = 16.40%</strong>.</li>
+            </ul>
+          </li>
+          <li><strong>Đối sánh Đa chiều:</strong> Tích hợp biểu đồ <strong>Seasonality Heatmap</strong>, <strong>YoY Waterfall</strong> và bảng <strong>A/B Year Benchmark</strong>.</li>
         </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Page 3</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Page 2 — Chuỗi thời gian &amp; Dự báo</span></div>
     </section>
 
     <!-- Slide 10 -->
     <section class="slide">
-      <div class="header"><h2>9. Page 4 — Sản phẩm, Sunburst &amp; Giỏ hàng (Apriori)</h2><span>Slide 10 / 14</span></div>
+      <div class="header"><h2>9. Page 3 — Bản đồ Choropleth Hoa Kỳ &amp; Khoan sâu Central / Texas</h2><span>Slide 10 / 16</span></div>
       <div class="content">
         <ul>
-          <li><strong>Mục tiêu:</strong> Xếp hạng Top N, khoan sâu danh mục và khai phá luật bán chéo (cross-sell).</li>
-          <li><strong>Triển khai kỹ thuật:</strong> Top N theo thời gian/khu vực + <strong>Biểu đồ Sunburst/Treemap</strong> click drill-down (<code>Category → Sub-Category → Product</code>) + <strong>Thuật toán Apriori</strong>.</li>
-          <li><strong>Insight:</strong> <code>Copiers</code> ($55.6K) dẫn đầu lợi nhuận; <code>Tables</code> (<span class="danger">-$17.7K</span>) lỗ nặng nhất; Apriori tìm ra các cặp mua kèm có Lift &gt; 1.</li>
+          <li><strong>Không gian Địa lý &amp; Giao vận SLA:</strong> Bản đồ <strong>Choropleth 49 tiểu bang</strong>, ma trận <strong>State Quadrant</strong> (Doanh thu vs. Biên LN), hiệu suất <strong>Shipping SLA</strong> và bảng đối chứng <strong>A/B Region Benchmark</strong>.</li>
+          <li><strong>Khoan sâu Nguyên nhân Gốc rễ tại Vùng <code>Central</code> &amp; Tiểu bang <code>Texas</code>:</strong>
+            <ul>
+              <li>Trong vùng Central, các bang <strong>Michigan (+$24,463, CK 0.7%)</strong> và <strong>Indiana (+$18,383, CK 0%)</strong> sinh lời rất cao.</li>
+              <li>Ngược lại, <strong>Texas lỗ nặng nhất toàn quốc (<span class="danger">-$25,729.36</span>, biên LN -15.12%, tỷ lệ đơn lỗ 49.54%)</strong> do mức chiết khấu trung bình lên tới <strong>37.01%</strong>, tập trung vào <code>Binders</code> (-$14,705, CK 80%), <code>Appliances</code> (-$6,147, CK 80%) và <code>Furnishings</code> (-$3,312, CK 60%).</li>
+            </ul>
+          </li>
         </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Page 4</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Page 3 — Khu vực &amp; Khoan sâu Texas</span></div>
     </section>
 
     <!-- Slide 11 -->
     <section class="slide">
-      <div class="header"><h2>10. Page 5 — UX, Cache &amp; Chatbot AI Gemini 2.5 Flash</h2><span>Slide 11 / 14</span></div>
+      <div class="header"><h2>10. Page 4 — Sản phẩm Top N, Sunburst 3 Tầng, Pareto 80/20 &amp; Apriori</h2><span>Slide 11 / 16</span></div>
       <div class="content">
         <ul>
-          <li><strong>Đồng bộ <code>st.session_state</code>:</strong> Bộ lọc ở Sidebar (Ngày, Khu vực, Danh mục...) được giữ nguyên khi chuyển qua lại giữa Page 1–5.</li>
-          <li><strong>Tối ưu hiệu năng &amp; UX:</strong> Dùng <code>st.tabs</code>, <code>st.expander</code> và <code>@st.cache_data</code> nạp CSV một lần vào RAM.</li>
-          <li><strong>Chatbot AI B2B (Gemini 2.5 Flash):</strong> Tự đọc ngữ cảnh DataFrame đang lọc để trả lời câu hỏi của lãnh đạo bằng ngôn ngữ tự nhiên.</li>
+          <li><strong>Top N &amp; Biểu đồ Phân cấp Sunburst / Treemap:</strong> Khoan sâu 3 tầng (<code>Category → Sub-Category → Product Name</code>) tô màu theo biên lợi nhuận; chỉ rõ 3 nhóm lỗ ròng: <code>Tables</code> (<span class="danger">-$17,725.48</span>), <code>Bookcases</code> (<span class="danger">-$3,472.56</span>) và <code>Supplies</code> (<span class="danger">-$1,189.10</span>).</li>
+          <li><strong>Phân tích Pareto 80/20 (ABC Classification):</strong> Phân hạng tự động Nhóm A (80% doanh thu đầu), Nhóm B (15% kế tiếp) và Nhóm C (5% cuối) để tối ưu danh mục SKU.</li>
+          <li><strong>Khai phá Giỏ hàng (Market Basket Analysis — Apriori):</strong> Tính toán <code>Support, Confidence, Lift</code> và dựng <strong>Đồ thị Mạng lưới Bán chéo (Network Graph)</strong> gợi ý ghép gói combo sản phẩm.</li>
         </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Page 5</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Page 4 — Sản phẩm &amp; Giỏ hàng Apriori</span></div>
     </section>
 
     <!-- Slide 12 -->
     <section class="slide">
-      <div class="header"><h2>11. Phát hiện trọng tâm: Tác động của Chiết khấu</h2><span>Slide 12 / 14</span></div>
+      <div class="header"><h2>11. Page 5 — Điểm gãy Chiết khấu 20% &amp; Học máy Giải thích Rủi ro Lỗ</h2><span>Slide 12 / 16</span></div>
       <div class="content">
         <div class="grid-3">
-          <div class="box"><h3>Discount = 0%</h3><div class="metric" style="color: var(--accent);">+$66.90</div><p>Lợi nhuận TB/giao dịch<br/>Tỷ lệ lỗ: <strong>0.00%</strong></p></div>
-          <div class="box"><h3>Discount &gt; 0%</h3><div class="metric" style="color: #d97706;">-$6.66</div><p>Lợi nhuận TB/giao dịch<br/>Tỷ lệ lỗ: <strong>36.01%</strong></p></div>
-          <div class="box"><h3>Discount &gt; 20%</h3><div class="metric" style="color: var(--danger);">-$97.18</div><p>Lợi nhuận TB/giao dịch<br/>Tỷ lệ lỗ: <strong class="danger">96.77%</strong></p></div>
+          <div class="box"><h3>Discount = 0%</h3><div class="metric" style="color: var(--accent);">+$66.90</div><p>LN TB/đơn • Tỷ lệ lỗ: <strong>0.0%</strong></p></div>
+          <div class="box"><h3>Discount &gt;20–30%</h3><div class="metric" style="color: #d97706;">-$45.83</div><p>LN TB/đơn • Tỷ lệ lỗ: <strong class="danger">91.59%</strong></p></div>
+          <div class="box"><h3>Discount &gt;30%</h3><div class="metric" style="color: var(--danger);">-$107.21</div><p>LN TB/đơn • Tỷ lệ lỗ: <strong class="danger">97.77%</strong></p></div>
         </div>
-        <p style="margin-top: 20px;"><strong>Kết luận phân tích:</strong> 1.871 dòng giao dịch bị lỗ (18.72%) bắt nguồn chủ yếu từ các đơn hàng áp dụng mức chiết khấu vượt ngưỡng <strong>20%</strong>.</p>
+        <ul style="margin-top: 14px;">
+          <li><strong>Mô hình Học máy Giải thích Rủi ro Đơn hàng Thua lỗ (Explainable ML — Train/Test 80/20):</strong>
+            <ul>
+              <li><strong>Random Forest Classifier:</strong> <code>ROC-AUC = 0.9770</code> | <code>F1-Score = 0.8300</code> | <code>Test Accuracy = 94.45%</code>.</li>
+              <li><strong>Logistic Regression:</strong> <code>ROC-AUC = 0.9846</code>.</li>
+              <li><strong>Feature Importance:</strong> Biến <code>Discount</code> chiếm tới <strong>71.51%</strong> quyền năng dự báo rủi ro đơn hàng bị lỗ!</li>
+            </ul>
+          </li>
+        </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Insight cốt lõi</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Page 5 — Chiết khấu &amp; Explainable ML</span></div>
     </section>
 
     <!-- Slide 13 -->
     <section class="slide">
-      <div class="header"><h2>12. Đề xuất giải pháp kinh doanh</h2><span>Slide 13 / 14</span></div>
+      <div class="header"><h2>12. Page 5 (Tiếp) — What-If Độ co giãn cầu (ε) &amp; Đường cong Tối ưu Lợi nhuận</h2><span>Slide 13 / 16</span></div>
       <div class="content">
         <ul>
-          <li><strong>1. Giới hạn trần chiết khấu ≤ 20%:</strong> Yêu cầu phê duyệt cấp quản lý đối với mức giảm giá vượt 20% để chấm dứt tình trạng bán lỗ diện rộng.</li>
-          <li><strong>2. Tái cấu trúc danh mục <code>Tables</code> &amp; <code>Bookcases</code>:</strong> Đánh giá lại chi phí vận chuyển hàng cồng kềnh, điều chỉnh giá bán hoặc bán kèm combo phụ kiện biên lợi nhuận cao.</li>
-          <li><strong>3. Tối ưu thị trường <code>Central</code>:</strong> Kiểm soát lại chính sách khuyến mãi tại khu vực Central nhằm nâng biên lợi nhuận từ 7.92% lên tiệm cận mức 12.47%.</li>
-          <li><strong>4. Đẩy mạnh bán chéo <code>Technology</code>:</strong> Tập trung vào nhóm <code>Home Office</code> và <code>Corporate</code> với các mặt hàng sinh lời cao (<code>Copiers</code>, <code>Phones</code>).</li>
+          <li><strong>Mô hình Kinh tế lượng Có Xét Độ Co Giãn Cầu Theo Giá (Price Elasticity ε):</strong>
+            <ul>
+              <li>Khi giảm chiết khấu (tức giá bán thực tế <em>P</em> tăng), sản lượng tiêu thụ <em>Q</em> và giá vốn khả biến điều chỉnh theo: <code>Q_mới = Q_cũ × (1 + ε × %ΔP)</code>.</li>
+            </ul>
+          </li>
+          <li><strong>Đường cong Tối ưu hóa Lợi nhuận (Profit Optimization Curve):</strong>
+            <ul>
+              <li>Quét trần chiết khấu tối đa từ <code>5% → 50%</code> đối sánh giữa kịch bản <em>Không co giãn (ε = 0.0)</em> và <em>Có co giãn cầu (ε = -0.4 đến -0.5)</em>.</li>
+              <li><strong>Kết quả thực nghiệm:</strong> Ngay cả khi sản lượng giảm nhẹ do co giãn cầu (giữ lại ~92.6% sản lượng), chính sách <strong>trần chiết khấu 20% + tăng giá 5% nhóm lỗ</strong> vẫn giúp phục hồi trên <strong>+$120,000 USD lợi nhuận ròng</strong> (nâng biên LN lên &gt;18%).</li>
+            </ul>
+          </li>
         </ul>
       </div>
-      <div class="footer"><span>Superstore BI Dashboard</span><span>Đề xuất kinh doanh</span></div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Page 5 — Độ co giãn cầu &amp; Tối ưu lợi nhuận</span></div>
     </section>
 
     <!-- Slide 14 -->
+    <section class="slide">
+      <div class="header"><h2>13. Page 5 (Tiếp) — Tối ưu Cache, Xuất HTML/PDF &amp; Trợ lý AI B2B</h2><span>Slide 14 / 16</span></div>
+      <div class="content">
+        <ul>
+          <li><strong>Đồng bộ <code>st.session_state</code> &amp; Hiệu năng <code>@st.cache_data</code>:</strong> Giữ nguyên bộ lọc xuyên suốt 5 trang; thời gian truy xuất dữ liệu từ RAM đạt <strong>&lt; 5 ms</strong>.</li>
+          <li><strong>Tra cứu Hồ sơ 360° &amp; Xuất Báo cáo Đa định dạng:</strong> Tìm kiếm tức thì theo Khách hàng / Mã đơn / Sản phẩm; xuất dữ liệu sạch <code>.CSV</code>, bản tóm tắt <code>.MD</code> và <strong>Báo cáo Điều hành chuẩn HTML/PDF (In trực tiếp bằng Ctrl+P)</strong>.</li>
+          <li><strong>Trợ lý AI Phân tích B2B Đa Chế Độ (<code>Gemini 2.5 Flash / Oxion AI</code> + <code>Local B2B Copilot</code>):</strong>
+            <ul>
+              <li>Tự động bơm ngữ cảnh số liệu đang lọc vào <code>System Prompt</code>; tích hợp nút <strong>1-Click AI Executive Brief</strong>.</li>
+              <li>Tích hợp <strong>Local B2B Analytical Copilot</strong> trả lời tức thì mọi câu hỏi về Texas/Central, chiết khấu, khách hàng RFM, sản phẩm ngay cả khi không cần API Key.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Page 5 — Cache, Export &amp; AI Copilot</span></div>
+    </section>
+
+    <!-- Slide 15 -->
+    <section class="slide">
+      <div class="header"><h2>14. Lộ trình Khuyến nghị Chiến lược 30 – 60 – 90 Ngày</h2><span>Slide 15 / 16</span></div>
+      <div class="content">
+        <ul>
+          <li><strong>1. Giai đoạn 30 ngày (Chặn đứng rò rỉ lợi nhuận từ chiết khấu):</strong> Áp dụng quy tắc khóa trần chiết khấu tối đa <strong>20%</strong> trên ERP; mọi mức giảm &gt;20% bắt buộc phải qua phê duyệt Giám đốc Vùng kèm điều kiện giá trị đơn tối thiểu.</li>
+          <li><strong>2. Giai đoạn 60 ngày (Tái cấu trúc vùng <code>Central</code> — trọng tâm bang <code>Texas</code> &amp; <code>Illinois</code>):</strong> Chấm dứt khuyến mãi giảm giá 60–80% ở nhóm <code>Binders</code> và <code>Appliances</code> tại Texas; chuẩn hóa biểu giá theo mô hình thành công của bang Michigan và Indiana.</li>
+          <li><strong>3. Giai đoạn 60–90 ngày (Tái định giá ngành <code>Furniture</code> &amp; Cross-selling Apriori):</strong> Điều chỉnh giá cơ sở +5% hoặc tách phụ phí vận chuyển cồng kềnh đối với <code>Tables</code>, <code>Bookcases</code>; bán kèm gói combo với <code>Technology</code> (<code>Copiers</code>, <code>Phones</code>).</li>
+          <li><strong>4. Giai đoạn 90 ngày (Chiến dịch Giữ chân Khách hàng theo <code>P(Alive)</code> &amp; <code>CLV</code>):</strong> Tập trung ngân sách chăm sóc nhóm khách hàng có <code>Revenue at Risk</code> cao nhằm bảo vệ khoản doanh thu rủi ro <strong>$287,793.41</strong>.</li>
+        </ul>
+      </div>
+      <div class="footer"><span>Superstore BI &amp; AI Dashboard</span><span>Lộ trình khuyến nghị 30-60-90 ngày</span></div>
+    </section>
+
+    <!-- Slide 16 -->
     <section class="slide title-slide">
       <div>
-        <span class="tag">TỔNG KẾT DỰ ÁN</span>
-        <h1>Cảm ơn thầy/cô và các bạn đã lắng nghe!</h1>
-        <p>✅ Hoàn thành EDA &amp; làm sạch dữ liệu với Pandas (25%)</p>
-        <p>✅ Hoàn thành Dashboard Streamlit 5 trang liên kết logic</p>
-        <p>✅ Đầy đủ Báo cáo dự án, Slide thuyết trình &amp; Mã nguồn sẵn sàng đẩy lên GitHub</p>
+        <span class="tag">TỔNG KẾT ĐỒ ÁN &amp; DEMO TRỰC TIẾP</span>
+        <h1>Cảm ơn Thầy/Cô và các bạn đã lắng nghe!</h1>
+        <p>✅ Hoàn thành EDA, Kiểm toán dữ liệu &amp; Xử lý ngoại lệ B2B chuẩn xác (9.993 dòng)</p>
+        <p>✅ Hệ thống Web BI &amp; AI Dashboard 6 trang (Executive Command Center + Page 1..5)</p>
+        <p>✅ Tích hợp 5 Mô-đun Khoa học &amp; Kinh tế lượng (Kiểm định giả thuyết, Độ co giãn cầu ε, Explainable ML, ADF + SARIMAX, P(Alive) &amp; CLV)</p>
+        <p>✅ Kiểm thử tự động 100% Passed (pytest) &amp; Đầy đủ tài liệu trên GitHub</p>
       </div>
     </section>
   </div>
 
   <div class="controls">
     <button onclick="changeSlide(-1)">◀ Trước</button>
-    <span id="counter">1 / 14</span>
+    <span id="counter">1 / 16</span>
     <button onclick="changeSlide(1)">Sau ▶</button>
     <button onclick="window.print()">🖨️ In / Xuất PDF</button>
   </div>
