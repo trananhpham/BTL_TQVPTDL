@@ -135,3 +135,19 @@ Hệ thống sử dụng **Plotly, Matplotlib và Seaborn**, đảm bảo đầy
 2. **Tái cấu trúc nhóm `Tables` và `Bookcases`:** Rà soát chi phí vận chuyển cồng kềnh, điều chỉnh giá hoặc bán kèm (cross-sell) theo gợi ý từ thuật toán **Apriori** với các mặt hàng biên lợi nhuận cao.
 3. **Tối ưu thị trường `Central` (đặc biệt bang Texas):** Cắt giảm khuyến mãi sâu không hiệu quả tại khu vực Central để đưa biên lợi nhuận tiệm cận mức trung bình `12.47%`.
 4. **Cá nhân hóa chăm sóc theo RFM:** Giữ chân nhóm *VIP* và kích hoạt sớm nhóm *Nguy cơ rời bỏ* bằng ưu đãi có điều kiện trên nhóm sản phẩm `Technology` (`Copiers`, `Phones`).
+
+### 5.4. Kết quả Phân tích Khoa học & Kinh tế lượng Nâng cao
+1. **Kiểm định Giả thuyết Thống kê & Tương quan Phi tham số (Page 1):**
+   * So sánh lợi nhuận nhóm `Discount ≤ 20%` và `Discount > 20%`: Kiểm định tham số Welch's $t = 16.14$ ($p = 2.44 \times 10^{-54}$) và phi tham số Mann-Whitney $U = 11,473,490$ ($p < 10^{-100}$), độ lớn hiệu ứng **Cohen's $d = 0.64$** (bác bỏ hoàn toàn $H_0$).
+   * Kiểm định khác biệt lợi nhuận giữa 4 Khu vực (`Region`): One-way ANOVA đạt $F = 2.62$ ($p = 0.0488$) nhưng kiểm định phi tham số **Kruskal-Wallis đạt $H = 227.84$ ($p = 4.06 \times 10^{-49}$)**, chứng minh sự cần thiết của kiểm định phi tham số trên dữ liệu B2B lệch phải.
+   * Tương quan `Discount ↔ Profit`: Hệ số Pearson tuyến tính đạt $r = -0.2195$, trong khi tương quan hạng **Spearman đạt $\rho = -0.5432$ ($p < 10^{-100}$)** — khẳng định mối quan hệ chiết khấu – lợi nhuận là đơn điệu phi tuyến (gãy khúc tại mốc 20%).
+2. **Mô hình Độ co giãn của Cầu theo Giá ($\epsilon$) & Đường cong Tối ưu Lợi nhuận (Page 5):**
+   * Ngay cả khi xét độ co giãn cầu theo giá ($\epsilon = -0.4$ đến $-0.5$, sản lượng tiêu thụ giữ lại $\sim 92.6\%$), chính sách đặt trần chiết khấu `20%` kết hợp điều chỉnh giá `+5%` nhóm hàng lỗ vẫn tối ưu hóa lợi nhuận toàn cục vượt trội so với hiện trạng.
+3. **Mô hình Học máy Giải thích Rủi ro Đơn hàng Thua lỗ — Explainable ML (Page 5):**
+   * Huấn luyện trên tập Train/Test phân tầng 80/20: **Random Forest đạt $\text{ROC-AUC} = 0.9770$, $\text{Accuracy} = 94.45\%$, $\text{F1-Score} = 0.8300$**; **Logistic Regression đạt $\text{ROC-AUC} = 0.9846$**.
+   * Trích xuất mức độ đóng góp (Feature Importance): Biến `Discount` chiếm **`71.51%`** tổng quyền năng dự báo rủi ro đơn lỗ, vượt xa các yếu tố kế tiếp (`Sub-Category_Binders` `4.39%`, `Sub-Category_Tables` `3.54%`, `Region_Central` `2.87%`).
+4. **Kiểm định Tính dừng Chuỗi thời gian (ADF Test) & Phân rã Cổ điển (Page 2):**
+   * Kiểm định nghiệm đơn vị Augmented Dickey-Fuller (ADF) xác nhận chuỗi sai phân bậc 1 ($\Delta Y_t, d=1$) đạt $\text{ADF Statistic} = -8.0522$ ($p < 0.0001$, vượt xa ngưỡng tới hạn $5\%$ là $-2.9283$), củng cố cơ sở toán học của mô hình `SARIMAX(1,1,0)(1,1,0,12)` (Hold-out 6M $\text{MAPE} = 17.50\%$, Seasonal Linear Trend $\text{MAPE} = 16.40\%$).
+5. **Xác suất Sống sót $P(\text{Alive})$, Dự báo CLV 12 tháng & Doanh thu Rủi ro (Page 1):**
+   * Trên 793 khách hàng, xác suất còn hoạt động trung bình đạt $P(\text{Alive}) = 62.6\%$, tổng giá trị vòng đời dự phóng 12 tháng tới (**Predicted 12M CLV**) đạt **`$475,148.00`**, và tổng doanh thu có nguy cơ mất (**Revenue at Risk**) là **`$287,793.41`**.
+

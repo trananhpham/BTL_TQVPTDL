@@ -5,6 +5,13 @@ from __future__ import annotations
 import plotly.express as px
 import streamlit as st
 
+import importlib
+import data.analytics as _analytics_mod
+import utils.ui_styles as _styles_mod
+
+importlib.reload(_analytics_mod)
+importlib.reload(_styles_mod)
+
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
     compare_groups_ab,
@@ -15,7 +22,7 @@ from data.analytics import (
     summarize_state_performance,
     summarize_state_subcategory,
 )
-from utils.ui_styles import render_dynamic_insight_banner
+from utils.ui_styles import CATEGORY_COLORS, REGION_COLORS, render_dynamic_insight_banner
 
 init_page("Page 3 - Khu vực & Bản đồ Mỹ", icon="🗺️")
 _, _, df_sidebar = render_global_sidebar()
@@ -52,6 +59,7 @@ with col_left:
         x="Region",
         y="Total_Sales",
         color="Region",
+        color_discrete_map=REGION_COLORS,
         text_auto=".2s",
         title="So sánh Tổng doanh thu theo Khu vực (Bar Chart)",
         labels={"Region": "Khu vực", "Total_Sales": "Tổng doanh thu (USD)"},
@@ -65,6 +73,8 @@ with col_right:
         x="Region",
         y=["Total_Sales", "Total_Profit"],
         barmode="group",
+        color_discrete_map={"Total_Sales": "#2563eb", "Total_Profit": "#16a34a"},
+        text_auto=".2s",
         title="Đối chiếu Doanh thu và Lợi nhuận theo Khu vực",
         labels={"Region": "Khu vực", "value": "Giá trị (USD)", "variable": "Chỉ số"},
     )
@@ -162,6 +172,7 @@ if not state_summary.empty:
         y="Profit_Margin_Pct",
         size="Order_Count",
         color="Region",
+        color_discrete_map=REGION_COLORS,
         text="State_Code",
         hover_name="State",
         hover_data={"Total_Sales": ":,.2f", "Total_Profit": ":,.2f", "Profit_Margin_Pct": ":.2f"},
@@ -175,99 +186,117 @@ if not state_summary.empty:
     st.plotly_chart(fig_quad, use_container_width=True)
 
 st.divider()
-st.subheader("🔍 Khoan sâu khu vực Central — bang nào và nhóm hàng nào đang lỗ")
+st.subheader("🔍 Khoan sâu Khu vực Central & Chẩn đoán Tiểu bang Tương tác (Mặc định: Texas)")
+st.caption(
+    "Phân tích nguyên nhân tại sao khu vực Central có biên lợi nhuận thấp nhất (7.92%) và khoan sâu vào từng tiểu bang cụ thể "
+    "để nhận diện nhóm sản phẩm cùng chính sách chiết khấu gây lỗ."
+)
 central_states = summarize_state_performance(df_filtered, region="Central")
-if central_states.empty:
-    st.info("Bộ lọc hiện tại không còn dữ liệu khu vực Central. Chọn Central ở multiselect để xem khoan sâu.")
-else:
-    worst_state = str(central_states.iloc[0]["State"])
-    worst_profit = float(central_states.iloc[0]["Total_Profit"])
-    worst_discount = float(central_states.iloc[0]["Avg_Discount"])
-    st.caption(
-        f"Trong Central, **{worst_state}** có lợi nhuận thấp nhất "
-        f"({worst_profit:,.0f} USD) với chiết khấu trung bình {worst_discount * 100:.1f}%."
-    )
-    c_left, c_right = st.columns(2)
-    with c_left:
+all_avail_states = state_summary.sort_values("Total_Profit", ascending=True)["State"].tolist()
+default_state = "Texas" if "Texas" in all_avail_states else (all_avail_states[0] if all_avail_states else "")
+
+c_left, c_right = st.columns([1.15, 1.35])
+with c_left:
+    if central_states.empty:
+        st.info("Bộ lọc hiện tại không bao gồm khu vực Central. Hãy chọn Central ở multiselect phía trên.")
+    else:
+        worst_central = str(central_states.iloc[0]["State"])
+        worst_c_profit = float(central_states.iloc[0]["Total_Profit"])
+        worst_c_disc = float(central_states.iloc[0]["Avg_Discount"]) * 100.0
+        st.markdown(
+            f"**Bức tranh vùng Central:** Tiểu bang lỗ nặng nhất là **{worst_central}** "
+            f"(**${worst_c_profit:,.0f}**, chiết khấu TB **{worst_c_disc:.1f}%**), đối lập với **Michigan** và **Indiana** sinh lời cao."
+        )
         fig_central = px.bar(
             central_states.sort_values("Total_Profit"),
             x="Total_Profit",
             y="State",
             color="Avg_Discount",
             orientation="h",
-            title="Lợi nhuận theo bang thuộc Central (màu = chiết khấu trung bình)",
+            title="Xếp hạng Lợi nhuận 13 Tiểu bang vùng Central (Màu = Chiết khấu TB)",
             labels={"Total_Profit": "Lợi nhuận (USD)", "State": "Tiểu bang", "Avg_Discount": "Chiết khấu TB"},
             color_continuous_scale="YlOrRd",
+            height=450,
         )
+        fig_central.add_vline(x=0, line_dash="dash", line_color="red")
         st.plotly_chart(fig_central, use_container_width=True)
-    with c_right:
-        sub_state = summarize_state_subcategory(df_filtered, worst_state)
-        fig_sub = px.bar(
-            sub_state,
-            x="Total_Profit",
-            y="Sub-Category",
-            color="Category",
-            orientation="h",
-            title=f"Lợi nhuận theo nhóm hàng tại {worst_state}",
-            labels={"Total_Profit": "Lợi nhuận (USD)", "Sub-Category": "Nhóm hàng"},
-        )
-        st.plotly_chart(fig_sub, use_container_width=True)
-    st.dataframe(
-        central_states.style.format(
-            {
-                "Total_Sales": "${:,.2f}",
-                "Total_Profit": "${:,.2f}",
-                "Avg_Discount": "{:.1%}",
-                "Profit_Margin_Pct": "{:.2f}%",
-                "Loss_Rate_Pct": "{:.1f}%",
-                "Order_Count": "{:,}",
-            }
-        ),
-        use_container_width=True,
-        hide_index=True,
-    )
 
-st.divider()
-st.subheader("🔬 Khoan sâu Texas — Bang lỗ nhiều nhất trong Central")
-texas_sub = summarize_state_subcategory(df_filtered, "Texas")
-if texas_sub.empty:
-    st.info("Không có dữ liệu Texas trong bộ lọc hiện tại.")
-else:
-    tx1, tx2 = st.columns([1.5, 2])
-    with tx1:
-        tx_disc_df = df_filtered[df_filtered["State"] == "Texas"]
-        tx_sales = float(tx_disc_df["Sales"].sum())
-        tx_profit = float(tx_disc_df["Profit"].sum())
-        tx_margin = (tx_profit / tx_sales * 100) if tx_sales else 0
-        tx_avg_disc = float(tx_disc_df["Discount"].mean()) * 100 if len(tx_disc_df) else 0
-        st.metric("Texas: Doanh thu", f"${tx_sales:,.0f}")
-        st.metric("Texas: Lợi nhuận", f"${tx_profit:,.0f}", delta=f"Biên {tx_margin:.1f}%")
-        st.metric("Texas: Chiết khấu TB", f"{tx_avg_disc:.1f}%")
-        loss_rows = tx_disc_df[tx_disc_df["Profit"] < 0]
-        disc_loss = loss_rows[loss_rows["Discount"] > 0.2]
-        st.caption(f"Texas có **{len(loss_rows)}** giao dịch lỗ, trong đó **{len(disc_loss)}** ({len(disc_loss)/max(len(loss_rows),1)*100:.0f}%) do chiết khấu > 20%.")
-    with tx2:
+with c_right:
+    if all_avail_states:
+        chosen_state = st.selectbox(
+            "🎯 Chọn Tiểu bang để chẩn đoán chi tiết (Xếp từ lỗ nặng nhất → lãi cao nhất)",
+            options=all_avail_states,
+            index=all_avail_states.index(default_state),
+        )
+        st_df = df_filtered[df_filtered["State"] == chosen_state]
+        st_sub = summarize_state_subcategory(df_filtered, chosen_state)
+        st_sales = float(st_df["Sales"].sum())
+        st_profit = float(st_df["Profit"].sum())
+        st_margin = (st_profit / st_sales * 100.0) if st_sales else 0.0
+        st_avg_disc = float(st_df["Discount"].mean() * 100.0) if len(st_df) else 0.0
+        st_loss_rows = st_df[st_df["Profit"] < 0]
+        st_disc_loss = st_loss_rows[st_loss_rows["Discount"] > 0.20]
+
+        sk1, sk2, sk3, sk4 = st.columns(4)
+        sk1.metric(f"{chosen_state}: Doanh thu", f"${st_sales:,.0f}")
+        sk2.metric(f"{chosen_state}: Lợi nhuận", f"${st_profit:,.0f}", delta=f"Biên {st_margin:.1f}%")
+        sk3.metric("Chiết khấu TB", f"{st_avg_disc:.1f}%")
+        sk4.metric(
+            "Giao dịch lỗ",
+            f"{len(st_loss_rows):,}",
+            delta=f"{len(st_disc_loss)} đơn CK >20%",
+            delta_color="inverse",
+        )
+
         fig_tx = px.bar(
-            texas_sub.sort_values("Total_Profit"),
+            st_sub.sort_values("Total_Profit"),
             x="Total_Profit",
             y="Sub-Category",
             color="Category",
+            color_discrete_map=CATEGORY_COLORS,
             orientation="h",
-            title="Lợi nhuận theo nhóm hàng tại Texas",
-            labels={"Total_Profit": "Lợi nhuận (USD)", "Sub-Category": "Nhóm hàng"},
-            height=420,
+            text_auto=".2s",
+            title=f"Lợi nhuận theo Nhóm hàng (Sub-Category) tại {chosen_state}",
+            labels={"Total_Profit": "Lợi nhuận (USD)", "Sub-Category": "Nhóm hàng", "Category": "Ngành hàng"},
+            height=360,
         )
         fig_tx.add_vline(x=0, line_dash="dash", line_color="red")
         st.plotly_chart(fig_tx, use_container_width=True)
-    tx_band = summarize_discount_bands(tx_disc_df)
-    if not tx_band.empty:
-        st.caption("**Phân tích ngưỡng chiết khấu tại Texas:**")
+
+with st.expander("📋 Xem bảng chi tiết các bang vùng Central & Phân tích ngưỡng chiết khấu tại bang đang chọn"):
+    if not central_states.empty:
+        st.caption("**1. Bảng hiệu suất 13 tiểu bang thuộc khu vực Central:**")
         st.dataframe(
-            tx_band[["Nguong_chiet_khau", "So_dong", "Loi_nhuan_TB", "Ty_le_lo", "Bien_LN_pct"]].style.format({
-                "Loi_nhuan_TB": "${:,.2f}", "Ty_le_lo": "{:.1f}%", "Bien_LN_pct": "{:.2f}%"
-            }),
-            use_container_width=True, hide_index=True,
+            central_states.style.format(
+                {
+                    "Total_Sales": "${:,.2f}",
+                    "Total_Profit": "${:,.2f}",
+                    "Avg_Discount": "{:.1%}",
+                    "Profit_Margin_Pct": "{:.2f}%",
+                    "Loss_Rate_Pct": "{:.1f}%",
+                    "Order_Count": "{:,}",
+                }
+            ),
+            use_container_width=True,
+            hide_index=True,
         )
+    if all_avail_states:
+        tx_band = summarize_discount_bands(df_filtered[df_filtered["State"] == chosen_state])
+        if not tx_band.empty:
+            st.caption(f"**2. Phân tích 5 ngưỡng chiết khấu tại tiểu bang {chosen_state}:**")
+            st.dataframe(
+                tx_band[["Nguong_chiet_khau", "So_dong", "Doanh_thu", "Loi_nhuan", "Loi_nhuan_TB", "Ty_le_lo", "Bien_LN_pct"]].style.format(
+                    {
+                        "Doanh_thu": "${:,.2f}",
+                        "Loi_nhuan": "${:,.2f}",
+                        "Loi_nhuan_TB": "${:,.2f}",
+                        "Ty_le_lo": "{:.1f}%",
+                        "Bien_LN_pct": "{:.2f}%",
+                    }
+                ),
+                use_container_width=True,
+                hide_index=True,
+            )
 
 st.divider()
 st.subheader("⚖️ So sánh Đối chứng 2 Khu vực (A/B Regional Benchmark)")

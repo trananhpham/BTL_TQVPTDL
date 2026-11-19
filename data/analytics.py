@@ -102,19 +102,32 @@ def summarize_by_category(df: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
-def summarize_top_products(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
-    """Lọc Top N sản phẩm có doanh thu cao nhất."""
-    return (
-        df.groupby(["Product ID", "Product Name", "Category"], as_index=False)
+def summarize_top_products(
+    df: pd.DataFrame,
+    top_n: int = 10,
+    rank_by: str = "Sales",
+) -> pd.DataFrame:
+    """Lọc Top N sản phẩm theo Doanh thu cao nhất (Sales), Lãi cao nhất (Profit_Max) hoặc Lỗ nặng nhất (Profit_Min)."""
+    grouped = (
+        df.groupby(["Product ID", "Product Name", "Category", "Sub-Category"], as_index=False)
         .agg(
             Total_Sales=("Sales", "sum"),
             Total_Profit=("Profit", "sum"),
+            Avg_Discount=("Discount", "mean"),
             Order_Count=("Order ID", "nunique"),
             Total_Quantity=("Quantity", "sum"),
         )
-        .sort_values("Total_Sales", ascending=False)
-        .head(top_n)
     )
+    grouped["Profit_Margin_Pct"] = np.where(
+        grouped["Total_Sales"] != 0,
+        (grouped["Total_Profit"] / grouped["Total_Sales"]) * 100.0,
+        0.0,
+    )
+    if rank_by == "Profit_Max":
+        return grouped.sort_values("Total_Profit", ascending=False).head(top_n).reset_index(drop=True)
+    if rank_by == "Profit_Min":
+        return grouped.sort_values("Total_Profit", ascending=True).head(top_n).reset_index(drop=True)
+    return grouped.sort_values("Total_Sales", ascending=False).head(top_n).reset_index(drop=True)
 
 
 def pivot_region_category(df: pd.DataFrame) -> pd.DataFrame:
@@ -411,6 +424,27 @@ def run_market_basket_apriori(
     if not rows:
         return pd.DataFrame()
     return pd.DataFrame(rows).sort_values(["Lift", "Confidence"], ascending=False).reset_index(drop=True)
+
+
+def compute_apriori_lift_matrix(df: pd.DataFrame, item_col: str = "Sub-Category") -> pd.DataFrame:
+    """Tính ma trận hệ số Lift hai chiều giữa các nhóm sản phẩm thường mua chung trong cùng đơn hàng."""
+    rules = run_market_basket_apriori(df, item_col=item_col, min_support=0.002, min_confidence=0.05)
+    if rules.empty:
+        return pd.DataFrame()
+    # Chỉ giữ các cặp đơn (1 nhóm -> 1 nhóm) để vẽ ma trận nhiệt trực quan
+    simple = rules[
+        (~rules["Antecedents"].str.contains(",")) & (~rules["Consequents"].str.contains(","))
+    ].copy()
+    if simple.empty:
+        return pd.DataFrame()
+    mat = simple.pivot_table(
+        index="Antecedents",
+        columns="Consequents",
+        values="Lift",
+        aggfunc="max",
+        fill_value=0.0,
+    )
+    return mat.round(2)
 
 
 def compute_cohort_retention(df: pd.DataFrame) -> pd.DataFrame:

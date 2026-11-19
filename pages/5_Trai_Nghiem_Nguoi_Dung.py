@@ -28,7 +28,7 @@ from data.analytics import (
     train_loss_risk_model,
 )
 from utils.formatters import format_int, format_usd
-from utils.ui_styles import render_dynamic_insight_banner
+from utils.ui_styles import CATEGORY_COLORS, render_dynamic_insight_banner
 
 init_page("Page 5 - UX, Cache & AI Chatbot", icon="✨")
 
@@ -412,6 +412,7 @@ with tab_disc:
         x="Discount",
         y="Profit",
         color="Category",
+        color_discrete_map=CATEGORY_COLORS,
         size="Sales",
         hover_data=["State", "Sub-Category", "Region", "Sales", "Quantity"],
         title="Biểu đồ phân tán: Chiết khấu vs. Lợi nhuận theo Ngành hàng",

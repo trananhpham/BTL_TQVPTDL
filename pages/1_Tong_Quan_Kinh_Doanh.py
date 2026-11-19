@@ -23,7 +23,7 @@ from data.analytics import (
     summarize_by_category,
 )
 from utils.formatters import format_int, format_usd
-from utils.ui_styles import render_dynamic_insight_banner
+from utils.ui_styles import CATEGORY_COLORS, render_dynamic_insight_banner
 
 init_page("Page 1 - Tổng quan & RFM", icon="📊")
 _, _, df = render_global_sidebar()
@@ -107,6 +107,8 @@ with tab_overview:
             cat_df,
             values="Sales",
             names="Category",
+            color="Category",
+            color_discrete_map=CATEGORY_COLORS,
             hole=0.45,
             title="Tỷ trọng Doanh thu theo Ngành hàng",
         )
@@ -129,6 +131,7 @@ with tab_overview:
             x="Segment",
             y="Sales",
             color="Category",
+            color_discrete_map=CATEGORY_COLORS,
             barmode=barmode_val,
             text_auto=".2s",
             title=f"Biểu đồ tổng hợp Doanh thu theo Phân khúc & Ngành hàng ({barmode_val.title()})",
@@ -165,6 +168,7 @@ with tab_dist:
             x=hist_var,
             nbins=40,
             color="Category",
+            color_discrete_map=CATEGORY_COLORS,
             marginal="rug",
             title=f"Phân phối tần suất (Histogram) của biến {hist_var}",
             labels={hist_var: hist_var, "count": "Số giao dịch"},

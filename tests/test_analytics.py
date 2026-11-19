@@ -8,6 +8,7 @@ from data.analytics import (
     analyze_timeseries_stationarity,
     build_executive_html_report,
     compare_groups_ab,
+    compute_apriori_lift_matrix,
     compute_clv_and_churn,
     compute_cohort_retention,
     compute_correlation_comparison,
@@ -204,6 +205,16 @@ def test_scientific_modules() -> None:
     assert len(clv) == 793
     assert (clv["P_Alive"] > 0).all() and (clv["P_Alive"] <= 1.0).all()
     assert clv["Predicted_12M_CLV"].sum() > 0
+
+    # 6. Top N Loss/Profit products & Apriori Lift Matrix
+    top_gain = summarize_top_products(clean, top_n=5, rank_by="Profit_Max")
+    top_loss = summarize_top_products(clean, top_n=5, rank_by="Profit_Min")
+    assert len(top_gain) == 5 and float(top_gain.iloc[0]["Total_Profit"]) > 0
+    assert len(top_loss) == 5 and float(top_loss.iloc[0]["Total_Profit"]) < 0
+
+    lift_mat = compute_apriori_lift_matrix(clean, item_col="Sub-Category")
+    assert not lift_mat.empty and lift_mat.shape[0] >= 5
+
 
 
 

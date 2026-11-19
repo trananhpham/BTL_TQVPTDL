@@ -147,32 +147,32 @@ nav1, nav2, nav3, nav4, nav5 = st.columns(5)
 
 with nav1:
     with st.container(border=True):
-        st.markdown("#### 📊 Page 1\n**Tổng quan & RFM**")
-        st.caption("KPI cốt lõi, Grouped/Stacked Bar, Histogram/Boxplot, RFM, Cohort & K-Means 3D (Elbow/Silhouette).")
+        st.markdown("#### 📊 Page 1\n**Tổng quan, Thống kê & CLV**")
+        st.caption("KPI cốt lõi, Grouped/Stacked Bar, Histogram/Boxplot, Kiểm định giả thuyết (t-test/ANOVA/Kruskal), RFM + CLV 12M & K-Means 3D.")
         st.page_link("pages/1_Tong_Quan_Kinh_Doanh.py", label="Mở Page 1 →", icon="📊", use_container_width=True)
 
 with nav2:
     with st.container(border=True):
-        st.markdown("#### 📈 Page 2\n**Xu hướng & Dự báo**")
-        st.caption("Chuỗi thời gian + MA3, Dự báo 3–6 tháng, Chấm sai số Hold-out (MAE/MAPE), Seasonality & Waterfall.")
+        st.markdown("#### 📈 Page 2\n**Chuỗi thời gian & Dự báo**")
+        st.caption("Xu hướng + MA3, Kiểm định tính dừng ADF & Phân rã 4 tầng, Dự báo SARIMAX/Prophet, Chấm sai số Hold-out & A/B Năm.")
         st.page_link("pages/2_Xu_Huong_Doanh_Thu.py", label="Mở Page 2 →", icon="📈", use_container_width=True)
 
 with nav3:
     with st.container(border=True):
         st.markdown("#### 🗺️ Page 3\n**Khu vực & Bản đồ Mỹ**")
-        st.caption("Choropleth Map 49 bang, Khoan sâu Central & Texas, Ma trận Tứ phân vị, So sánh A/B & Shipping SLA.")
+        st.caption("Choropleth Map 49 bang, Khoan sâu Central & Chẩn đoán Tiểu bang tương tác (Texas), Ma trận Tứ phân vị, A/B Vùng & SLA.")
         st.page_link("pages/3_Phan_Tich_Khu_Vuc.py", label="Mở Page 3 →", icon="🗺️", use_container_width=True)
 
 with nav4:
     with st.container(border=True):
         st.markdown("#### 🏆 Page 4\n**Sản phẩm & Giỏ hàng**")
-        st.caption("Top N sản phẩm, Khoan sâu phân cấp Sunburst/Treemap, Luật kết hợp bán chéo Apriori & Pareto 80/20.")
+        st.caption("Top N Doanh thu / Lãi / Lỗ, Sunburst/Treemap 3 tầng, Ma trận Nhiệt Lift Apriori, Gợi ý Combo Bán kèm & Pareto 80/20.")
         st.page_link("pages/4_Phan_Tich_San_Pham.py", label="Mở Page 4 →", icon="🏆", use_container_width=True)
 
 with nav5:
     with st.container(border=True):
-        st.markdown("#### ✨ Page 5\n**UX, What-If & AI**")
-        st.caption("Biểu đồ kép Ngưỡng chiết khấu, What-If Simulator, Cảnh báo lỗ, Tra cứu 360°, Xuất HTML/PDF & Gemini AI.")
+        st.markdown("#### ✨ Page 5\n**Kinh tế lượng, ML & AI**")
+        st.caption("Biểu đồ kép Chiết khấu, What-If Độ co giãn cầu (ε), Học máy Giải thích Rủi ro Lỗ (RF/Logit), Xuất HTML/PDF & Trợ lý AI.")
         st.page_link("pages/5_Trai_Nghiem_Nguoi_Dung.py", label="Mở Page 5 →", icon="✨", use_container_width=True)
 
 st.divider()

@@ -7,14 +7,22 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+import importlib
+import data.analytics as _analytics_mod
+import utils.ui_styles as _styles_mod
+
+importlib.reload(_analytics_mod)
+importlib.reload(_styles_mod)
+
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
+    compute_apriori_lift_matrix,
     compute_pareto_abc,
     run_market_basket_apriori,
     summarize_by_category,
     summarize_top_products,
 )
-from utils.ui_styles import render_dynamic_insight_banner
+from utils.ui_styles import CATEGORY_COLORS, render_dynamic_insight_banner
 
 init_page("Page 4 - Sản phẩm, Sunburst & Giỏ hàng", icon="🏆")
 _, _, df_sidebar = render_global_sidebar()
@@ -99,24 +107,60 @@ tab_top, tab_sunburst, tab_apriori, tab_pareto = st.tabs(
 )
 
 with tab_top:
-    top_products = summarize_top_products(df_filtered, top_n=top_n)
-    top_sorted = top_products.sort_values("Total_Sales", ascending=True).copy()
+    rank_mode_label = st.radio(
+        "Tiêu chí xếp hạng Sản phẩm",
+        options=[
+            "💰 Top N Doanh thu cao nhất (Best Sellers)",
+            "📈 Top N Lợi nhuận cao nhất (Cash Cows)",
+            "🚨 Top N Sản phẩm lỗ nặng nhất (Loss Leaders)",
+        ],
+        horizontal=True,
+    )
+    if "Lợi nhuận cao nhất" in rank_mode_label:
+        rank_code = "Profit_Max"
+        x_col = "Total_Profit"
+        chart_title = f"Top {top_n} Sản phẩm mang lại Lợi nhuận cao nhất (Cash Cows)"
+        x_label = "Tổng lợi nhuận (USD)"
+    elif "lỗ nặng nhất" in rank_mode_label:
+        rank_code = "Profit_Min"
+        x_col = "Total_Profit"
+        chart_title = f"Top {top_n} Sản phẩm gây Thua lỗ nặng nhất (Loss Leaders)"
+        x_label = "Khoản lỗ ròng (USD)"
+    else:
+        rank_code = "Sales"
+        x_col = "Total_Sales"
+        chart_title = f"Top {top_n} Sản phẩm có Doanh thu cao nhất (Best Sellers)"
+        x_label = "Tổng doanh thu (USD)"
+
+    top_products = summarize_top_products(df_filtered, top_n=top_n, rank_by=rank_code)
+    top_sorted = top_products.sort_values(x_col, ascending=(rank_code != "Profit_Min")).copy()
     top_sorted["Short_Name"] = top_sorted["Product Name"].apply(
         lambda s: s if len(s) <= 44 else s[:41] + "..."
     )
 
     fig_top = px.bar(
         top_sorted,
-        x="Total_Sales",
+        x=x_col,
         y="Short_Name",
         color="Category",
+        color_discrete_map=CATEGORY_COLORS,
         orientation="h",
         text_auto=".2s",
-        hover_data={"Product Name": True, "Short_Name": False, "Total_Sales": ":,.2f", "Total_Profit": ":,.2f"},
-        title=f"Top {top_n} sản phẩm có doanh thu cao nhất",
-        labels={"Total_Sales": "Tổng doanh thu (USD)", "Short_Name": "Sản phẩm", "Category": "Ngành hàng"},
+        hover_data={
+            "Product Name": True,
+            "Short_Name": False,
+            "Sub-Category": True,
+            "Total_Sales": ":,.2f",
+            "Total_Profit": ":,.2f",
+            "Avg_Discount": ":.1%",
+            "Profit_Margin_Pct": ":.2f",
+        },
+        title=chart_title,
+        labels={x_col: x_label, "Short_Name": "Sản phẩm", "Category": "Ngành hàng"},
         height=max(420, top_n * 30),
     )
+    if x_col == "Total_Profit":
+        fig_top.add_vline(x=0, line_dash="dash", line_color="red")
     st.plotly_chart(fig_top, use_container_width=True)
 
     subcat_df = summarize_by_category(df_filtered).sort_values("Total_Profit", ascending=True)
@@ -126,11 +170,14 @@ with tab_top:
         y="Sub-Category",
         color="Total_Profit",
         color_continuous_scale="RdYlGn",
+        color_continuous_midpoint=0,
         orientation="h",
-        title="Hiệu suất Lợi nhuận theo Nhóm sản phẩm (Sub-Category)",
+        text_auto=".2s",
+        title="Hiệu suất Lợi nhuận theo Nhóm sản phẩm (17 Sub-Categories)",
         labels={"Total_Profit": "Tổng lợi nhuận (USD)", "Sub-Category": "Nhóm sản phẩm"},
-        height=500,
+        height=520,
     )
+    fig_subcat.add_vline(x=0, line_dash="dash", line_color="red")
     st.plotly_chart(fig_subcat, use_container_width=True)
 
 with tab_sunburst:
@@ -187,26 +234,90 @@ with tab_apriori:
     if rules_df.empty:
         st.info("Không tìm thấy luật kết hợp nào thỏa mãn ngưỡng Support/Confidence. Hãy thử giảm ngưỡng lọc.")
     else:
-        rules_plot = rules_df.head(12).copy()
-        rules_plot["Rule"] = rules_plot["Antecedents"] + " → " + rules_plot["Consequents"]
-        fig_rules = px.bar(
-            rules_plot.sort_values("Lift", ascending=True),
-            x="Lift",
-            y="Rule",
-            color="Confidence",
-            orientation="h",
-            hover_data=["Support", "Pair_Orders"],
-            title="Top các cặp sản phẩm thường mua cùng nhau (Xếp theo Lift)",
-            labels={"Lift": "Chỉ số Lift (> 1 là liên kết dương)", "Rule": "Luật bán chéo"},
-            height=450,
-        )
-        st.plotly_chart(fig_rules, use_container_width=True)
+        ap_left, ap_right = st.columns([1.2, 1.1])
+        with ap_left:
+            rules_plot = rules_df.head(12).copy()
+            rules_plot["Rule"] = rules_plot["Antecedents"] + " → " + rules_plot["Consequents"]
+            fig_rules = px.bar(
+                rules_plot.sort_values("Lift", ascending=True),
+                x="Lift",
+                y="Rule",
+                color="Confidence",
+                color_continuous_scale="Tealgrn",
+                orientation="h",
+                hover_data=["Support", "Pair_Orders"],
+                title="Top các cặp sản phẩm thường mua cùng nhau (Xếp theo Lift)",
+                labels={"Lift": "Chỉ số Lift (> 1 là liên kết dương)", "Rule": "Luật bán chéo"},
+                height=460,
+            )
+            st.plotly_chart(fig_rules, use_container_width=True)
 
-        st.dataframe(
-            rules_df.style.format({"Support": "{:.2%}", "Confidence": "{:.2%}", "Lift": "{:.2f}"}),
-            use_container_width=True,
-            hide_index=True,
+        with ap_right:
+            lift_mat = compute_apriori_lift_matrix(df_filtered, item_col=item_granularity)
+            if not lift_mat.empty:
+                fig_lift_hm = px.imshow(
+                    lift_mat,
+                    text_auto=".2f",
+                    color_continuous_scale="YlGnBu",
+                    aspect="auto",
+                    title=f"Ma trận Nhiệt Hệ số Lift ({item_granularity} × {item_granularity})",
+                    labels={"x": "Mua kèm (Consequents)", "y": "Mặt hàng gốc (Antecedents)", "color": "Lift"},
+                )
+                fig_lift_hm.update_layout(height=460)
+                st.plotly_chart(fig_lift_hm, use_container_width=True)
+
+        st.divider()
+        st.subheader("💡 Công cụ Đề xuất Gói Bán Kèm (Cross-Sell Bundle Advisor)")
+        st.caption(
+            "Chọn một nhóm hàng đang lỗ hoặc biên lợi nhuận thấp (ví dụ: `Tables`, `Bookcases`, `Binders`) "
+            "để tìm các nhóm hàng có biên lợi nhuận cao thường được khách mua chung trong cùng giỏ hàng."
         )
+        sub_margins = (
+            df_filtered.groupby(item_granularity, as_index=False)
+            .agg(Sales=("Sales", "sum"), Profit=("Profit", "sum"))
+        )
+        sub_margins["Margin_Pct"] = (sub_margins["Profit"] / sub_margins["Sales"].replace(0, 1)) * 100.0
+        margin_map = dict(zip(sub_margins[item_granularity], sub_margins["Margin_Pct"]))
+
+        avail_items = sorted(df_filtered[item_granularity].unique().tolist())
+        default_item = "Tables" if "Tables" in avail_items else (avail_items[0] if avail_items else "")
+        if avail_items:
+            target_item = st.selectbox(
+                f"Chọn {item_granularity} cần thiết kế gói Combo bán kèm:",
+                options=avail_items,
+                index=avail_items.index(default_item),
+            )
+            all_pair_rules = run_market_basket_apriori(df_filtered, item_col=item_granularity, min_support=0.002, min_confidence=0.05)
+            related = all_pair_rules[all_pair_rules["Antecedents"] == target_item].copy()
+            if not related.empty:
+                related["Biên_LN_Mặt_Hàng_Kèm (%)"] = related["Consequents"].map(margin_map).round(2)
+                best_partner = related.sort_values(["Biên_LN_Mặt_Hàng_Kèm (%)", "Lift"], ascending=False).iloc[0]
+                st.success(
+                    f"🎯 **Gợi ý Combo cho `{target_item}` (Biên LN hiện tại: {margin_map.get(target_item, 0.0):.2f}%):** "
+                    f"Nên ghép gói bán kèm với **`{best_partner['Consequents']}`** "
+                    f"(Biên LN: **+{best_partner['Biên_LN_Mặt_Hàng_Kèm (%)']:.2f}%**, "
+                    f"Lift = **{best_partner['Lift']:.2f}**, Confidence = **{best_partner['Confidence']*100:.1f}%**, "
+                    f"xuất hiện chung trong **{int(best_partner['Pair_Orders'])}** đơn hàng) và giới hạn chiết khấu gói ≤ 15%."
+                )
+                st.dataframe(
+                    related.head(8).style.format(
+                        {
+                            "Support": "{:.2%}",
+                            "Confidence": "{:.2%}",
+                            "Lift": "{:.2f}",
+                            "Biên_LN_Mặt_Hàng_Kèm (%)": "{:+.2f}%",
+                        }
+                    ),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+        with st.expander("📋 Xem toàn bộ bảng luật kết hợp Apriori"):
+            st.dataframe(
+                rules_df.style.format({"Support": "{:.2%}", "Confidence": "{:.2%}", "Lift": "{:.2f}"}),
+                use_container_width=True,
+                hide_index=True,
+            )
 
 with tab_pareto:
     st.subheader("⚖️ Phân tích Pareto 80/20 & Phân loại ABC")
