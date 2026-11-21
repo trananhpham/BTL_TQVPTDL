@@ -3,7 +3,7 @@
 
 let
     Source = Csv.Document(
-        File.Contents("D:\truc quan phan tich du lieu\Sample - Superstore.csv"),
+        File.Contents("D:\BTL_TQVPTDL\Sample - Superstore.csv"),
         [Delimiter = ",", Columns = 21, Encoding = 1252, QuoteStyle = QuoteStyle.Csv]
     ),
     PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),

@@ -7,13 +7,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-import importlib
-import data.analytics as _analytics_mod
-import utils.ui_styles as _styles_mod
-
-importlib.reload(_analytics_mod)
-importlib.reload(_styles_mod)
-
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
     compute_apriori_lift_matrix,

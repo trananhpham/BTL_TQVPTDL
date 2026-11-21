@@ -9,11 +9,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-import importlib
-import data.analytics as _analytics_mod
-
-importlib.reload(_analytics_mod)
-
 from components.ai_chatbot import render_ai_chatbot
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
@@ -103,11 +98,7 @@ tab_ai, tab_sim, tab_lookup, tab_disc, tab_pivot, tab_data = st.tabs(
 )
 
 with tab_ai:
-    import importlib
-    import components.ai_chatbot as _ai_mod
-
-    importlib.reload(_ai_mod)
-    _ai_mod.render_ai_chatbot(df_filtered, location="main")
+    render_ai_chatbot(df_filtered, location="main")
 
 with tab_sim:
     st.subheader("🎯 Mô phỏng Kịch bản Kinh doanh & Độ co giãn của Cầu theo Giá (Price Elasticity)")

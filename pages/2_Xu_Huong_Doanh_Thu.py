@@ -8,11 +8,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 
-import importlib
-import data.analytics as _analytics_mod
-
-importlib.reload(_analytics_mod)
-
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
     analyze_timeseries_stationarity,

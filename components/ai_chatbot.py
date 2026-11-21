@@ -477,19 +477,17 @@ def render_ai_chatbot(df_filtered: pd.DataFrame, location: str = "main") -> None
                         )
                     else:
                         from google import genai
+                        from google.genai import types
 
                         client = genai.Client(api_key=current_key)
-                        kwargs = {
-                            "model": selected_model,
-                            "input": prompt_with_context,
-                            "system_instruction": system_instruction,
-                        }
-                        if st.session_state.get("ai_last_interaction_id"):
-                            kwargs["previous_interaction_id"] = st.session_state["ai_last_interaction_id"]
-
-                        interaction = client.interactions.create(**kwargs)
-                        st.session_state["ai_last_interaction_id"] = interaction.id
-                        reply = interaction.output_text or generate_local_b2b_response(df_filtered, final_prompt)
+                        response = client.models.generate_content(
+                            model=selected_model,
+                            contents=prompt_with_context,
+                            config=types.GenerateContentConfig(
+                                system_instruction=system_instruction,
+                            ),
+                        )
+                        reply = response.text or generate_local_b2b_response(df_filtered, final_prompt)
                     st.markdown(reply)
                 except Exception as err:
                     fallback_reply = generate_local_b2b_response(df_filtered, final_prompt)
