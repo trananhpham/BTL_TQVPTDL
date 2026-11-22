@@ -13,8 +13,10 @@ from components.ai_chatbot import render_ai_chatbot
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
     build_executive_html_report,
+    calculate_profit_goal_seek,
     compute_elasticity_curve,
     detect_loss_anomalies,
+    detect_multivariate_anomalies,
     pivot_region_category,
     pivot_year_segment,
     simulate_discount_what_if,
@@ -67,6 +69,41 @@ def cached_loss_ml(data: pd.DataFrame) -> dict[str, object]:
     return train_loss_risk_model(data)
 
 
+@st.cache_data(show_spinner="Đang phân tích bất thường bằng Isolation Forest...")
+def cached_anomalies(data: pd.DataFrame, contamination: float) -> dict[str, object]:
+    """Cache kết quả phát hiện bất thường đa biến Isolation Forest."""
+    return detect_multivariate_anomalies(data, contamination=contamination)
+
+
+@st.cache_data(show_spinner=False)
+def cached_what_if(data: pd.DataFrame, cap: float, uplift: float, elasticity: float) -> dict[str, object]:
+    """Cache kết quả mô phỏng What-If kinh tế lượng."""
+    return simulate_discount_what_if(
+        data,
+        max_discount_cap=cap,
+        loss_subcat_uplift_pct=uplift,
+        price_elasticity=elasticity,
+    )
+
+
+@st.cache_data(show_spinner=False)
+def cached_elasticity_curve(data: pd.DataFrame, uplift: float, elasticity: float) -> pd.DataFrame:
+    """Cache đường cong tối ưu hóa lợi nhuận theo trần chiết khấu."""
+    return compute_elasticity_curve(data, uplift_pct=uplift, elasticity=elasticity)
+
+
+@st.cache_data(show_spinner=False)
+def cached_loss_anomalies(data: pd.DataFrame, threshold: float) -> pd.DataFrame:
+    """Cache danh sách đơn hàng thua lỗ vượt ngưỡng."""
+    return detect_loss_anomalies(data, profit_threshold=threshold)
+
+
+@st.cache_data(show_spinner=False)
+def cached_goal_seek(data: pd.DataFrame, target_pct: float) -> dict:
+    """Cache kết quả tính ngược mục tiêu lợi nhuận (Goal Seeking)."""
+    return calculate_profit_goal_seek(data, target_profit_increase_pct=target_pct)
+
+
 st.title("✨ Page 5: Trải nghiệm người dùng, Tối ưu Cache & Trợ lý AI")
 st.caption(
     "Toàn bộ bộ lọc được quy hoạch tại Sidebar (đồng bộ `st.session_state`), "
@@ -86,10 +123,11 @@ c3.metric("💰 Doanh thu lọc được", format_usd(df_filtered["Sales"].sum()
 c4.metric("📈 Lợi nhuận lọc được", format_usd(df_filtered["Profit"].sum()))
 
 # Tổ chức nội dung bằng Tabs
-tab_ai, tab_sim, tab_lookup, tab_disc, tab_pivot, tab_data = st.tabs(
+tab_ai, tab_sim, tab_anomaly, tab_lookup, tab_disc, tab_pivot, tab_data = st.tabs(
     [
         "🤖 Trợ lý AI Phân tích B2B (Gemini Flash)",
         "🎯 What-If Simulator & Cảnh báo Lỗ",
+        "🕵️ Bất thường Đa biến (Isolation Forest)",
         "🔎 Tra cứu 360° (Đơn / Khách / SP)",
         "📉 Tác động Chiết khấu & Lợi nhuận",
         "🧮 Pivot Table & GroupBy",
@@ -128,11 +166,11 @@ with tab_sim:
             help="ε = 0: Cầu hoàn toàn không co giãn (sản lượng giữ nguyên). ε = -0.4: Giá thực tế tăng 10% thì sản lượng giảm 4%.",
         )
 
-    sim_res = simulate_discount_what_if(
+    sim_res = cached_what_if(
         df_filtered,
-        max_discount_cap=cap_pct / 100.0,
-        loss_subcat_uplift_pct=float(uplift_pct),
-        price_elasticity=float(elasticity_val),
+        cap=cap_pct / 100.0,
+        uplift=float(uplift_pct),
+        elasticity=float(elasticity_val),
     )
 
     m1, m2, m3, m4 = st.columns(4)
@@ -184,8 +222,8 @@ with tab_sim:
         st.plotly_chart(fig_sim, use_container_width=True)
 
     with c_sim_right:
-        curve_df = compute_elasticity_curve(
-            df_filtered, uplift_pct=float(uplift_pct), elasticity=float(elasticity_val if elasticity_val != 0 else -0.5)
+        curve_df = cached_elasticity_curve(
+            df_filtered, uplift=float(uplift_pct), elasticity=float(elasticity_val if elasticity_val != 0 else -0.5)
         )
         if not curve_df.empty:
             fig_curve = go.Figure()
@@ -214,6 +252,38 @@ with tab_sim:
                 hovermode="x unified",
             )
             st.plotly_chart(fig_curve, use_container_width=True)
+
+    # 1.5 Tính ngược Mục tiêu Lợi nhuận (Goal-Seeking Reverse What-If)
+    st.divider()
+    st.subheader("🎯 Bộ công cụ Tính ngược Mục tiêu Lợi nhuận (Goal-Seeking Profit Calculator)")
+    st.caption(
+        "Nhập mục tiêu phần trăm tăng trưởng lợi nhuận mong muốn của Ban Giám đốc (ví dụ: +15%), "
+        "hệ thống tự động tìm chính xác trần chiết khấu tối đa (Optimal Discount Cap) cần áp dụng để đạt chỉ tiêu."
+    )
+    target_increase_slider = st.slider(
+        "Mục tiêu tăng trưởng lợi nhuận mong muốn (+% Profit Target)",
+        min_value=5.0,
+        max_value=35.0,
+        value=15.0,
+        step=1.0,
+    )
+    goal_res = cached_goal_seek(df_filtered, target_pct=float(target_increase_slider))
+    if goal_res.get("actual_profit"):
+        g1, g2, g3, g4 = st.columns(4)
+        g1.metric("Lợi nhuận hiện tại", format_usd(goal_res["actual_profit"]))
+        g2.metric("Mục tiêu Lợi nhuận mới", format_usd(goal_res["target_profit"]), delta=f"+{goal_res['target_increase_pct']:.0f}%")
+        g3.metric("Lợi nhuận cần bù đắp", format_usd(goal_res["needed_profit_delta"]))
+        g4.metric(
+            "Trần chiết khấu đề xuất",
+            goal_res["recommended_cap_pct"],
+            delta="Mức trần khả thi" if goal_res["target_met"] else "Mức trần tối đa đạt được",
+            delta_color="normal" if goal_res["target_met"] else "inverse",
+        )
+        st.info(
+            f"💡 **Khuyến nghị điều hành:** Để tăng trưởng thêm **{format_usd(goal_res['needed_profit_delta'])}** lợi nhuận (+{goal_res['target_increase_pct']:.0f}%), "
+            f"doanh nghiệp chỉ cần thiết lập **trần chiết khấu tối đa ở mức `{goal_res['recommended_cap_pct']}`** kết hợp tăng nhẹ giá 3% tại nhóm hàng đang lỗ. "
+            f"Dự phóng tổng lợi nhuận đạt **{format_usd(goal_res['sim_profit'])}** (Biên LN đạt **{goal_res['sim_margin_pct']:.2f}%**)."
+        )
 
     st.divider()
     st.subheader("🧠 Mô hình Học máy Giải thích Rủi ro Đơn hàng Thua lỗ (Explainable ML — Random Forest & Logit Odds Ratio)")
@@ -269,7 +339,7 @@ with tab_sim:
         value=-150,
         step=10,
     )
-    anomalies_df = detect_loss_anomalies(df_filtered, profit_threshold=float(loss_thresh))
+    anomalies_df = cached_loss_anomalies(df_filtered, threshold=float(loss_thresh))
     if anomalies_df.empty:
         st.success("Không có đơn hàng nào lỗ vượt ngưỡng cảnh báo trong bộ lọc hiện tại.")
     else:
@@ -279,6 +349,94 @@ with tab_sim:
             use_container_width=True,
             hide_index=True,
         )
+
+with tab_anomaly:
+    st.subheader("🕵️ Phát hiện Đơn hàng Bất thường Đa biến (Multivariate Anomaly Detection)")
+    st.caption(
+        "Ứng dụng thuật toán Học máy không giám sát **Isolation Forest** để tự động gắn cờ các đơn hàng "
+        "dị biệt trên không gian 5 chiều: `[Sales, Profit, Discount, Quantity, Shipping_Days]`."
+    )
+    anom_c1, anom_c2 = st.columns([1.5, 2.5])
+    with anom_c1:
+        contamination_val = st.slider(
+            "Tỷ lệ nhiễm bất thường kỳ vọng (Contamination)",
+            min_value=0.005,
+            max_value=0.05,
+            value=0.02,
+            step=0.005,
+            format="%.3f",
+            help="Tỷ lệ % các bản ghi dị biệt nhất mà thuật toán Isolation Forest sẽ phân tách.",
+        )
+    with anom_c2:
+        st.info(
+            "💡 **Ưu điểm vượt trội:** Khác với 1.5×IQR chỉ xét từng biến riêng lẻ, Isolation Forest phát hiện "
+            "những điểm bất thường tiềm ẩn trong tương quan đa biến (ví dụ: số lượng ít nhưng giảm giá sâu gây lỗ nặng)."
+        )
+
+    anom_res = cached_anomalies(df_filtered, contamination=float(contamination_val))
+    anom_metrics = anom_res.get("metrics", {})
+    anom_df = anom_res.get("anomalies", pd.DataFrame())
+    full_anom_df = anom_res.get("data", pd.DataFrame())
+
+    if anom_metrics and not anom_df.empty:
+        am1, am2, am3, am4 = st.columns(4)
+        am1.metric("🚨 Số đơn bất thường", f"{anom_metrics['anomalies_count']:,} đơn")
+        am2.metric("📊 Tỷ lệ phát hiện", f"{anom_metrics['anomaly_rate_pct']:.2f}%")
+        am3.metric(
+            "💸 Tổng thiệt hại (Lỗ ròng)",
+            format_usd(anom_metrics["total_anomalous_loss"]),
+            delta_color="inverse",
+        )
+        am4.metric("💰 Doanh thu liên quan", format_usd(anom_metrics["total_anomalous_sales"]))
+
+        st.subheader("📉 Biểu đồ Tọa độ Song song (Parallel Coordinates Plot — 5 Chiều)")
+        st.caption("Mỗi đường thể hiện một giao dịch. Màu sắc phản ánh Anomaly Score (điểm càng âm càng bất thường).")
+        sample_anom = (
+            full_anom_df.sample(min(1200, len(full_anom_df)), random_state=42)
+            if len(full_anom_df) > 1200
+            else full_anom_df
+        )
+        fig_par = px.parallel_coordinates(
+            sample_anom,
+            dimensions=["Sales", "Discount", "Quantity", "Shipping_Days", "Profit"],
+            color="Anomaly_Score",
+            color_continuous_scale="RdBu",
+            title="Parallel Coordinates: Sales → Discount → Quantity → Shipping Days → Profit",
+        )
+        fig_par.update_layout(height=420)
+        st.plotly_chart(fig_par, use_container_width=True)
+
+        st.subheader("📋 Bảng Danh sách Đơn hàng Bất thường nhất kèm Chẩn đoán Tự động")
+        st.dataframe(
+            anom_df[
+                [
+                    "Order ID",
+                    "Customer Name",
+                    "State",
+                    "Sub-Category",
+                    "Sales",
+                    "Discount",
+                    "Quantity",
+                    "Profit",
+                    "Shipping_Days",
+                    "Anomaly_Score",
+                    "Nguyen_nhan_bat_thuong",
+                ]
+            ]
+            .head(30)
+            .style.format(
+                {
+                    "Sales": "${:,.2f}",
+                    "Profit": "${:,.2f}",
+                    "Discount": "{:.0%}",
+                    "Anomaly_Score": "{:.4f}",
+                }
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.info("Cần tối thiểu 50 giao dịch trong bộ lọc để chạy mô hình phát hiện bất thường Isolation Forest.")
 
 with tab_lookup:
     st.subheader("🔎 Tra cứu Hồ sơ 360° (Đơn hàng, Khách hàng & Sản phẩm)")

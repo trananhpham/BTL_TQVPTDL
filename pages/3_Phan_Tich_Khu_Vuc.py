@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
     compare_groups_ab,
+    compute_regional_radar_metrics,
+    generate_regional_action_playbook,
     pivot_region_category,
     summarize_by_region,
     summarize_by_state,
@@ -19,6 +23,54 @@ from utils.ui_styles import CATEGORY_COLORS, REGION_COLORS, render_dynamic_insig
 
 init_page("Page 3 - Khu vực & Bản đồ Mỹ", icon="🗺️")
 _, _, df_sidebar = render_global_sidebar()
+
+
+@st.cache_data(show_spinner=False)
+def cached_radar(data: pd.DataFrame) -> dict:
+    """Cache kết quả tính toán năng lực vận hành 4 vùng (Radar Chart)."""
+    return compute_regional_radar_metrics(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_playbook(radar_data: pd.DataFrame) -> list[dict]:
+    """Cache sổ tay hành động chiến lược theo từng vùng."""
+    return generate_regional_action_playbook(radar_data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_region_summary(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache tổng hợp doanh thu theo vùng."""
+    return summarize_by_region(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_state_summary(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache tổng hợp doanh thu theo tiểu bang."""
+    return summarize_by_state(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_pivot_reg_cat(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache Pivot Table Vùng x Ngành hàng."""
+    return pivot_region_category(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_central_states(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache tổng hợp các bang vùng Central."""
+    return summarize_state_performance(data, region="Central")
+
+
+@st.cache_data(show_spinner=False)
+def cached_state_subcat(data: pd.DataFrame, state_name: str) -> pd.DataFrame:
+    """Cache chi tiết nhóm hàng theo tiểu bang."""
+    return summarize_state_subcategory(data, state_name)
+
+
+@st.cache_data(show_spinner=False)
+def cached_compare_regions(data: pd.DataFrame, a: str, b: str) -> pd.DataFrame:
+    """Cache so sánh đối chứng 2 vùng."""
+    return compare_groups_ab(data, "Region", a, b)
 
 st.title("🗺️ Page 3: Phân tích khu vực & Bản đồ địa lý Hoa Kỳ")
 st.caption("So sánh doanh thu theo vùng bằng biểu đồ cột (`multiselect`) và bản đồ nhiệt Choropleth theo từng tiểu bang.")
@@ -41,8 +93,8 @@ if not selected_regions:
 
 df_filtered = df_sidebar[df_sidebar["Region"].isin(selected_regions)]
 render_dynamic_insight_banner(df_filtered)
-region_summary = summarize_by_region(df_filtered)
-state_summary = summarize_by_state(df_filtered)
+region_summary = cached_region_summary(df_filtered)
+state_summary = cached_state_summary(df_filtered)
 
 # 1. Biểu đồ cột so sánh giữa các vùng
 col_left, col_right = st.columns(2)
@@ -72,6 +124,102 @@ with col_right:
         labels={"Region": "Khu vực", "value": "Giá trị (USD)", "variable": "Chỉ số"},
     )
     st.plotly_chart(fig_profit_bar, use_container_width=True)
+
+st.divider()
+
+# 1.5. Biểu đồ Radar Đánh giá Năng lực Vận hành 4 Vùng
+st.subheader("🕸️ Đánh giá Sức khỏe Vận hành 4 Vùng (Regional Operational Health Radar)")
+st.caption(
+    "Đánh giá toàn diện các khu vực trên 5 trục năng lực chuẩn hóa (thang điểm 0–100): "
+    "Quy mô Doanh thu, Biên Lợi nhuận, Tỷ lệ Đơn Lãi, Tốc độ Giao vận và Kỷ luật Chiết khấu."
+)
+radar_res = cached_radar(df_filtered)
+radar_df = radar_res.get("scores", pd.DataFrame())
+dimensions = radar_res.get("dimensions", [])
+
+if not radar_df.empty and dimensions:
+    r_left, r_right = st.columns([1.25, 1.0])
+    with r_left:
+        fig_radar = go.Figure()
+        theta_closed = dimensions + [dimensions[0]]
+        for r_row in radar_df.to_dict("records"):
+            reg_name = str(r_row["Region"])
+            r_vals = [float(r_row[d]) for d in dimensions]
+            r_vals_closed = r_vals + [r_vals[0]]
+            color = REGION_COLORS.get(reg_name, "#2563eb")
+            fig_radar.add_trace(
+                go.Scatterpolar(
+                    r=r_vals_closed,
+                    theta=theta_closed,
+                    fill="toself",
+                    name=f"{reg_name} (Điểm: {r_row['Diem_Tong_Hop']})",
+                    line=dict(color=color, width=2),
+                    opacity=0.6,
+                )
+            )
+        fig_radar.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 100], ticksuffix=" đ"),
+            ),
+            showlegend=True,
+            title="Đồ thị Radar Đa giác Năng lực Vận hành (0 - 100 điểm)",
+            height=440,
+            margin=dict(l=40, r=40, t=40, b=30),
+        )
+        st.plotly_chart(fig_radar, use_container_width=True)
+
+    with r_right:
+        st.markdown("#### 🏆 Bảng Xếp hạng Sức khỏe Vận hành 4 Vùng:")
+        st.dataframe(
+            radar_df[
+                [
+                    "Region",
+                    "Diem_Tong_Hop",
+                    "Quy mô Doanh thu",
+                    "Biên Lợi nhuận",
+                    "Tỷ lệ Đơn Lãi",
+                    "Tốc độ Giao vận",
+                    "Kỷ luật Chiết khấu",
+                ]
+            ].style.format(
+                {
+                    "Diem_Tong_Hop": "{:.1f} đ",
+                    "Quy mô Doanh thu": "{:.1f}",
+                    "Biên Lợi nhuận": "{:.1f}",
+                    "Tỷ lệ Đơn Lãi": "{:.1f}",
+                    "Tốc độ Giao vận": "{:.1f}",
+                    "Kỷ luật Chiết khấu": "{:.1f}",
+                }
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.caption(
+            "📌 **Giải thích trục đo:** *Kỷ luật Chiết khấu* cao thể hiện vùng kiểm soát giảm giá tốt (ít đơn giảm sâu). "
+            "*Tốc độ Giao vận* cao thể hiện thời gian hoàn tất đơn hàng nhanh."
+        )
+
+    # 1.6 Sổ tay Hành động Chiến lược Điều hành Tự động (Action Playbook)
+    playbook = cached_playbook(radar_df)
+    if playbook:
+        st.markdown("#### 📋 Sổ tay Hành động Chiến lược Điều hành (Automated Strategic Regional Playbook)")
+        pb_cols = st.columns(len(playbook))
+        for col_item, pb in zip(pb_cols, playbook):
+            with col_item:
+                reg_name = pb["region"]
+                b_color = pb["badge_color"]
+                st.markdown(
+                    f"<div style='border: 1px solid #cbd5e1; border-top: 4px solid {b_color}; border-radius: 8px; padding: 12px; background: #f8fafc; height: 100%;'>"
+                    f"<h4 style='margin: 0; color: #1e293b;'>Khu vực: {reg_name}</h4>"
+                    f"<p style='margin: 4px 0 8px 0; font-size: 13px; font-weight: 600; color: {b_color};'>● Trạng thái: {pb['status']}</p>"
+                    f"<p style='margin: 0; font-size: 12px; color: #475569;'>Điểm tổng: <b>{pb['overall_score']:.1f}/100</b> | Biên LN: <b>{pb['actual_margin']:.1f}%</b></p>"
+                    f"<hr style='margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;'/>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+                with st.expander(f"Hành động đề xuất ({reg_name})", expanded=(pb["badge_color"] == "#dc2626")):
+                    for act in pb["actions"]:
+                        st.markdown(f"- {act}")
 
 st.divider()
 
@@ -116,7 +264,7 @@ fig_map.update_layout(
 st.plotly_chart(fig_map, use_container_width=True)
 
 st.subheader("📊 Bảng Pivot Table: Khu vực × Danh mục sản phẩm (Doanh thu)")
-pivot_df = pivot_region_category(df_filtered)
+pivot_df = cached_pivot_reg_cat(df_filtered)
 st.dataframe(pivot_df.style.format("${:,.2f}"), use_container_width=True)
 
 st.divider()
@@ -184,7 +332,7 @@ st.caption(
     "Phân tích nguyên nhân tại sao khu vực Central có biên lợi nhuận thấp nhất (7.92%) và khoan sâu vào từng tiểu bang cụ thể "
     "để nhận diện nhóm sản phẩm cùng chính sách chiết khấu gây lỗ."
 )
-central_states = summarize_state_performance(df_filtered, region="Central")
+central_states = cached_central_states(df_filtered)
 all_avail_states = state_summary.sort_values("Total_Profit", ascending=True)["State"].tolist()
 default_state = "Texas" if "Texas" in all_avail_states else (all_avail_states[0] if all_avail_states else "")
 
@@ -222,7 +370,7 @@ with c_right:
             index=all_avail_states.index(default_state),
         )
         st_df = df_filtered[df_filtered["State"] == chosen_state]
-        st_sub = summarize_state_subcategory(df_filtered, chosen_state)
+        st_sub = cached_state_subcat(df_filtered, chosen_state)
         st_sales = float(st_df["Sales"].sum())
         st_profit = float(st_df["Profit"].sum())
         st_margin = (st_profit / st_sales * 100.0) if st_sales else 0.0
@@ -301,7 +449,7 @@ if len(selected_regions) >= 2:
         reg_a = st.selectbox("Khu vực A (Mục tiêu)", options=selected_regions, index=selected_regions.index(default_a))
     with r_col2:
         reg_b = st.selectbox("Khu vực B (Đối chiếu)", options=selected_regions, index=selected_regions.index(default_b))
-    ab_reg_df = compare_groups_ab(df_filtered, "Region", reg_a, reg_b)
+    ab_reg_df = cached_compare_regions(df_filtered, reg_a, reg_b)
     st.dataframe(
         ab_reg_df.style.format(
             {

@@ -9,8 +9,10 @@ import streamlit as st
 
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
+    build_apriori_network_elements,
     compute_apriori_lift_matrix,
     compute_pareto_abc,
+    generate_smart_cross_sell_bundles,
     run_market_basket_apriori,
     summarize_by_category,
     summarize_top_products,
@@ -35,6 +37,46 @@ def cached_apriori(
         min_support=min_support,
         min_confidence=min_confidence,
     )
+
+
+@st.cache_data(show_spinner=False)
+def cached_network(rules_data: pd.DataFrame, df_data: pd.DataFrame, min_lift: float) -> dict:
+    """Cache cấu trúc mạng lưới liên kết sản phẩm."""
+    return build_apriori_network_elements(rules_data, df_data, min_lift=min_lift)
+
+
+@st.cache_data(show_spinner=False)
+def cached_top_products(data: pd.DataFrame, top_n: int, rank_by: str) -> pd.DataFrame:
+    """Cache danh sách top sản phẩm."""
+    return summarize_top_products(data, top_n=top_n, rank_by=rank_by)
+
+
+@st.cache_data(show_spinner=False)
+def cached_lift_matrix(data: pd.DataFrame, item_col: str) -> pd.DataFrame:
+    """Cache ma trận Lift 2 chiều."""
+    return compute_apriori_lift_matrix(data, item_col=item_col)
+
+
+@st.cache_data(show_spinner=False)
+def cached_pareto(data: pd.DataFrame, entity_col: str) -> pd.DataFrame:
+    """Cache phân tích Pareto ABC 80/20."""
+    return compute_pareto_abc(data, entity_col=entity_col)
+
+
+@st.cache_data(show_spinner=False)
+def cached_hierarchy(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache bảng phân cấp Category -> Sub-Category -> Product."""
+    h = (
+        data.groupby(["Category", "Sub-Category", "Product Name"], as_index=False)
+        .agg(Sales=("Sales", "sum"), Profit=("Profit", "sum"))
+    )
+    return h[h["Sales"] > 0]
+
+
+@st.cache_data(show_spinner=False)
+def cached_smart_bundles(data: pd.DataFrame, min_lift: float) -> pd.DataFrame:
+    """Cache bảng đề xuất các gói Combo bán kèm tối ưu."""
+    return generate_smart_cross_sell_bundles(data, min_lift=min_lift, top_n=5)
 
 
 st.title("🏆 Page 4: Phân tích sản phẩm, Sunburst & Giỏ hàng (Apriori)")
@@ -125,11 +167,11 @@ with tab_top:
         chart_title = f"Top {top_n} Sản phẩm có Doanh thu cao nhất (Best Sellers)"
         x_label = "Tổng doanh thu (USD)"
 
-    top_products = summarize_top_products(df_filtered, top_n=top_n, rank_by=rank_code)
+    top_products = cached_top_products(df_filtered, top_n=top_n, rank_by=rank_code)
     top_sorted = top_products.sort_values(x_col, ascending=(rank_code != "Profit_Min")).copy()
-    top_sorted["Short_Name"] = top_sorted["Product Name"].apply(
-        lambda s: s if len(s) <= 44 else s[:41] + "..."
-    )
+    top_sorted["Short_Name"] = [
+        s if len(s) <= 44 else s[:41] + "..." for s in top_sorted["Product Name"]
+    ]
 
     fig_top = px.bar(
         top_sorted,
@@ -181,11 +223,7 @@ with tab_sunburst:
         options=["Sunburst", "Treemap"],
         horizontal=True,
     )
-    hierarchy_df = (
-        df_filtered.groupby(["Category", "Sub-Category", "Product Name"], as_index=False)
-        .agg(Sales=("Sales", "sum"), Profit=("Profit", "sum"))
-    )
-    hierarchy_df = hierarchy_df[hierarchy_df["Sales"] > 0]
+    hierarchy_df = cached_hierarchy(df_filtered)
 
     if chart_style == "Sunburst":
         fig_hier = px.sunburst(
@@ -246,7 +284,7 @@ with tab_apriori:
             st.plotly_chart(fig_rules, use_container_width=True)
 
         with ap_right:
-            lift_mat = compute_apriori_lift_matrix(df_filtered, item_col=item_granularity)
+            lift_mat = cached_lift_matrix(df_filtered, item_col=item_granularity)
             if not lift_mat.empty:
                 fig_lift_hm = px.imshow(
                     lift_mat,
@@ -258,6 +296,77 @@ with tab_apriori:
                 )
                 fig_lift_hm.update_layout(height=460)
                 st.plotly_chart(fig_lift_hm, use_container_width=True)
+
+        st.divider()
+        st.subheader("🕸️ Đồ thị Mạng lưới Liên kết Sản phẩm (Interactive Product Affinity Network Graph)")
+        st.caption(
+            "Trực quan hóa cấu trúc mạng lưới giữa các nhóm hàng: Kích thước node đại diện cho Doanh thu, "
+            "Màu sắc theo Ngành hàng, và Độ dày đường nối thể hiện sức mạnh liên kết mua kèm (Confidence & Lift)."
+        )
+        min_net_lift = st.slider("Ngưỡng Lift tối thiểu để hiển thị liên kết trên mạng lưới", 0.8, 2.0, 0.95, 0.05)
+        net_data = cached_network(rules_df, df_filtered, min_lift=min_net_lift)
+        nodes_df = net_data.get("nodes", pd.DataFrame())
+        edges_df = net_data.get("edges", pd.DataFrame())
+
+        if not nodes_df.empty:
+            fig_net = go.Figure()
+
+            # Vẽ các cạnh liên kết (Edges)
+            for edge in edges_df.to_dict("records"):
+                fig_net.add_trace(
+                    go.Scatter(
+                        x=[edge["x0"], edge["x1"], None],
+                        y=[edge["y0"], edge["y1"], None],
+                        mode="lines",
+                        line=dict(
+                            width=max(1.0, min(5.0, float(edge["confidence"]) * 7.0)),
+                            color="rgba(148, 163, 184, 0.45)",
+                        ),
+                        hoverinfo="text",
+                        text=(
+                            f"{edge['source']} ↔ {edge['target']}<br>"
+                            f"Lift: {edge['lift']:.2f} | Confidence: {edge['confidence']*100:.1f}%<br>"
+                            f"Đơn mua kèm: {edge['orders']:,}"
+                        ),
+                        showlegend=False,
+                    )
+                )
+
+            # Vẽ các đỉnh (Nodes)
+            node_colors = [CATEGORY_COLORS.get(c, "#2563eb") for c in nodes_df["Category"]]
+            hover_texts = [
+                f"<b>{r['Sub-Category']}</b> ({r['Category']})<br>Doanh thu: ${r['Total_Sales']:,.2f}<br>Lợi nhuận: ${r['Total_Profit']:,.2f}<br>Số đơn: {r['Order_Count']:,}"
+                for r in nodes_df.to_dict("records")
+            ]
+            fig_net.add_trace(
+                go.Scatter(
+                    x=nodes_df["x"],
+                    y=nodes_df["y"],
+                    mode="markers+text",
+                    marker=dict(
+                        size=nodes_df["node_size"],
+                        color=node_colors,
+                        line=dict(width=2, color="white"),
+                    ),
+                    text=nodes_df["Sub-Category"],
+                    textposition="top center",
+                    textfont=dict(size=11, color="#1e293b"),
+                    hoverinfo="text",
+                    hovertext=hover_texts,
+                    name="Nhóm hàng",
+                    showlegend=False,
+                )
+            )
+
+            fig_net.update_layout(
+                title=f"Mạng lưới Bán kèm ({len(nodes_df)} nhóm hàng, {len(edges_df)} liên kết có Lift ≥ {min_net_lift})",
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                height=560,
+                margin=dict(l=20, r=20, t=40, b=20),
+                plot_bgcolor="rgba(248, 250, 252, 0.5)",
+            )
+            st.plotly_chart(fig_net, use_container_width=True)
 
         st.divider()
         st.subheader("💡 Công cụ Đề xuất Gói Bán Kèm (Cross-Sell Bundle Advisor)")
@@ -305,6 +414,29 @@ with tab_apriori:
                     hide_index=True,
                 )
 
+        st.divider()
+        st.subheader("🎁 Đề xuất Top 5 Gói Combo Bán Kèm Tối Ưu (Smart Cross-Sell Bundles)")
+        st.caption(
+            "Mô hình thuật toán tự động tính toán các cặp sản phẩm có hệ số Lift cao nhất, "
+            "định giá gói combo (chiết khấu 8%) và dự phóng doanh thu gia tăng khi áp dụng tiếp thị chéo."
+        )
+        bundles_df = cached_smart_bundles(df_filtered, min_lift=1.1)
+        if not bundles_df.empty:
+            st.dataframe(
+                bundles_df.style.format(
+                    {
+                        "Lift": "{:.2f}",
+                        "Giá gốc 2 món ($)": "${:,.2f}",
+                        "Giá đề xuất Combo ($)": "${:,.2f}",
+                        "Doanh thu gia tăng dự phóng ($)": "+${:,.2f}",
+                    }
+                ),
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.info("Chưa đủ dữ liệu để tạo gói combo tối ưu.")
+
         with st.expander("📋 Xem toàn bộ bảng luật kết hợp Apriori"):
             st.dataframe(
                 rules_df.style.format({"Support": "{:.2%}", "Confidence": "{:.2%}", "Lift": "{:.2f}"}),
@@ -319,7 +451,7 @@ with tab_pareto:
         options=["Sub-Category", "Product Name", "Customer Name"],
         horizontal=True,
     )
-    abc_df = compute_pareto_abc(df_filtered, entity_col=pareto_entity)
+    abc_df = cached_pareto(df_filtered, entity_col=pareto_entity)
     if abc_df.empty:
         st.info("Không đủ dữ liệu để tính phân tích Pareto.")
     else:

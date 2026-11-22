@@ -317,21 +317,24 @@ def compute_rfm_segments(df: pd.DataFrame) -> pd.DataFrame:
 
     rfm["RFM_Total"] = rfm["R_Score"] + rfm["F_Score"] + rfm["M_Score"]
 
-    def _assign_label(row: pd.Series) -> str:
-        r, f, m = row["R_Score"], row["F_Score"], row["M_Score"]
-        if r >= 4 and f >= 4 and m >= 4:
-            return "VIP"
-        if f >= 4 and r >= 3:
-            return "Khách hàng trung thành"
-        if r >= 4 and f <= 2:
-            return "Khách hàng mới"
-        if r <= 2 and (f >= 3 or m >= 3):
-            return "Nguy cơ rời bỏ"
-        if r <= 2 and f <= 2:
-            return "Ngủ đông / Cần kích hoạt"
-        return "Khách hàng tiềm năng"
-
-    rfm["RFM_Segment"] = rfm.apply(_assign_label, axis=1)
+    r = rfm["R_Score"].to_numpy()
+    f = rfm["F_Score"].to_numpy()
+    m = rfm["M_Score"].to_numpy()
+    conds = [
+        (r >= 4) & (f >= 4) & (m >= 4),
+        (f >= 4) & (r >= 3),
+        (r >= 4) & (f <= 2),
+        (r <= 2) & ((f >= 3) | (m >= 3)),
+        (r <= 2) & (f <= 2),
+    ]
+    choices = [
+        "VIP",
+        "Khách hàng trung thành",
+        "Khách hàng mới",
+        "Nguy cơ rời bỏ",
+        "Ngủ đông / Cần kích hoạt",
+    ]
+    rfm["RFM_Segment"] = np.select(conds, choices, default="Khách hàng tiềm năng")
     return rfm.sort_values("Monetary", ascending=False).reset_index(drop=True)
 
 
@@ -342,7 +345,7 @@ def run_market_basket_apriori(
     min_confidence: float = 0.2,
 ) -> pd.DataFrame:
     """Phân tích giỏ hàng (Market Basket Analysis) tìm luật kết hợp bán chéo (Apriori)."""
-    baskets = df.groupby("Order ID")[item_col].apply(lambda s: sorted(set(s.astype(str)))).tolist()
+    baskets = [sorted(list(x)) for x in df.groupby("Order ID")[item_col].unique()]
     total_orders = len(baskets)
     if total_orders == 0:
         return pd.DataFrame()
@@ -511,14 +514,12 @@ def compute_pareto_abc(df: pd.DataFrame, entity_col: str = "Product Name") -> pd
     grouped["Cumulative_Sales_Pct"] = grouped["Sales_Share_Pct"].cumsum()
     grouped["Rank"] = np.arange(1, len(grouped) + 1)
 
-    def _abc_class(cum_pct: float) -> str:
-        if cum_pct <= 80.0:
-            return "Nhóm A (Top 80% doanh thu)"
-        if cum_pct <= 95.0:
-            return "Nhóm B (80% – 95%)"
-        return "Nhóm C (5% cuối)"
-
-    grouped["ABC_Class"] = grouped["Cumulative_Sales_Pct"].apply(_abc_class)
+    cum = grouped["Cumulative_Sales_Pct"].to_numpy()
+    grouped["ABC_Class"] = np.select(
+        [cum <= 80.0, cum <= 95.0],
+        ["Nhóm A (Top 80% doanh thu)", "Nhóm B (80% – 95%)"],
+        default="Nhóm C (5% cuối)",
+    )
     return grouped
 
 
@@ -589,18 +590,24 @@ def detect_loss_anomalies(df: pd.DataFrame, profit_threshold: float = -100.0) ->
     if anomalies.empty:
         return anomalies
 
-    def _root_cause(row: pd.Series) -> str:
-        high_disc = row["Discount"] > 0.20
-        loss_subcat = row["Sub-Category"] in ("Tables", "Bookcases", "Supplies")
-        if high_disc and loss_subcat:
-            return "Chiết khấu >20% & Nhóm hàng lỗ"
-        if high_disc:
-            return "Chiết khấu sâu (>20%)"
-        if loss_subcat:
-            return "Nhóm hàng biên âm (Tables/Bookcases/Supplies)"
-        return "Giá vốn/Chi phí vận chuyển cao"
+    disc = anomalies["Discount"].to_numpy()
+    subcat = anomalies["Sub-Category"].to_numpy()
+    is_high_disc = disc > 0.20
+    is_loss_subcat = np.isin(subcat, ["Tables", "Bookcases", "Supplies"])
 
-    anomalies["Nguyên_Nhân_Gợi_Ý"] = anomalies.apply(_root_cause, axis=1)
+    conds = [
+        is_high_disc & is_loss_subcat,
+        is_high_disc,
+        is_loss_subcat,
+    ]
+    choices = [
+        "Chiết khấu >20% & Nhóm hàng lỗ",
+        "Chiết khấu sâu (>20%)",
+        "Nhóm hàng biên âm (Tables/Bookcases/Supplies)",
+    ]
+    anomalies["Nguyên_Nhân_Gợi_Ý"] = np.select(
+        conds, choices, default="Giá vốn/Chi phí vận chuyển cao"
+    )
     cols = [
         "Order ID",
         "Order Date",
@@ -860,15 +867,16 @@ def compute_yoy_waterfall(df: pd.DataFrame, metric: str = "Sales") -> pd.DataFra
         return pd.DataFrame()
 
     rows = []
-    for idx, row in yearly.iterrows():
-        yr = int(row["Order_Year"])
-        val = float(row[metric])
+    prev_val = 0.0
+    for idx, row in enumerate(yearly.itertuples(index=False)):
+        yr = int(row.Order_Year)
+        val = float(getattr(row, metric))
         if idx == 0:
             rows.append({"Label": f"Năm {yr} (Gốc)", "Value": val, "Measure": "absolute", "Total": val})
         else:
-            prev_val = float(yearly.loc[idx - 1, metric])
             delta = val - prev_val
             rows.append({"Label": f"Thay đổi {yr}", "Value": delta, "Measure": "relative", "Total": val})
+        prev_val = val
 
     if len(yearly) > 1:
         last_yr = int(yearly.iloc[-1]["Order_Year"])
@@ -999,16 +1007,16 @@ def build_executive_html_report(df: pd.DataFrame) -> str:
     date_max = df["Order Date"].max().strftime("%d/%m/%Y")
 
     reg_rows = "".join(
-        f"<tr><td>{r['Region']}</td><td>${r['Total_Sales']:,.2f}</td>"
-        f"<td>${r['Total_Profit']:,.2f}</td><td>{r['Order_Count']:,}</td>"
-        f"<td>{r['Profit_Margin_Pct']:.2f}%</td></tr>"
-        for _, r in reg_df.iterrows()
+        f"<tr><td>{r.Region}</td><td>${r.Total_Sales:,.2f}</td>"
+        f"<td>${r.Total_Profit:,.2f}</td><td>{r.Order_Count:,}</td>"
+        f"<td>{r.Profit_Margin_Pct:.2f}%</td></tr>"
+        for r in reg_df.itertuples(index=False)
     )
     disc_rows = "".join(
-        f"<tr><td>{r['Nguong_chiet_khau']}</td><td>{int(r['So_dong']):,}</td>"
-        f"<td>${r['Doanh_thu']:,.2f}</td><td>${r['Loi_nhuan']:,.2f}</td>"
-        f"<td>${r['Loi_nhuan_TB']:,.2f}</td><td>{r['Ty_le_lo']:.1f}%</td></tr>"
-        for _, r in disc_df.iterrows()
+        f"<tr><td>{r.Nguong_chiet_khau}</td><td>{int(r.So_dong):,}</td>"
+        f"<td>${r.Doanh_thu:,.2f}</td><td>${r.Loi_nhuan:,.2f}</td>"
+        f"<td>${r.Loi_nhuan_TB:,.2f}</td><td>{r.Ty_le_lo:.1f}%</td></tr>"
+        for r in disc_df.itertuples(index=False)
     )
 
     return f"""<!DOCTYPE html>
@@ -1252,7 +1260,7 @@ def train_loss_risk_model(df: pd.DataFrame) -> dict[str, object]:
         X_df, y, test_size=0.20, random_state=42, stratify=y
     )
 
-    rf = RandomForestClassifier(n_estimators=120, max_depth=8, random_state=42, n_jobs=1)
+    rf = RandomForestClassifier(n_estimators=120, max_depth=8, random_state=42, n_jobs=-1)
     rf.fit(X_train, y_train)
     rf_prob = rf.predict_proba(X_test)[:, 1]
     rf_pred = (rf_prob >= 0.5).astype(int)
@@ -1433,6 +1441,540 @@ def compute_clv_and_churn(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return merged.sort_values("Predicted_12M_CLV", ascending=False).reset_index(drop=True)
+
+
+def build_apriori_network_elements(
+    rules_df: pd.DataFrame,
+    df: pd.DataFrame,
+    min_lift: float = 0.95,
+) -> dict[str, Any]:
+    """Tạo cấu trúc dữ liệu đồ thị mạng lưới (Nodes & Edges) từ kết quả khai phá luật kết hợp Apriori.
+
+    Phục vụ trực quan hóa Interactive Product Affinity Network Graph.
+    """
+    if rules_df.empty or df.empty:
+        return {"nodes": pd.DataFrame(), "edges": pd.DataFrame(), "subcats": []}
+
+    filtered_rules = rules_df[rules_df["Lift"] >= min_lift].copy()
+    if filtered_rules.empty:
+        filtered_rules = rules_df.head(20).copy()
+
+    simple_rules = filtered_rules[
+        (~filtered_rules["Antecedents"].astype(str).str.contains(","))
+        & (~filtered_rules["Consequents"].astype(str).str.contains(","))
+    ].copy()
+    if not simple_rules.empty:
+        filtered_rules = simple_rules
+
+    all_subcats = sorted(
+        list(set(filtered_rules["Antecedents"].unique()).union(set(filtered_rules["Consequents"].unique())))
+    )
+    if not all_subcats:
+        return {"nodes": pd.DataFrame(), "edges": pd.DataFrame(), "subcats": []}
+
+    subcat_stats = (
+        df[df["Sub-Category"].isin(all_subcats)]
+        .groupby(["Sub-Category", "Category"], as_index=False)
+        .agg(
+            Total_Sales=("Sales", "sum"),
+            Total_Profit=("Profit", "sum"),
+            Order_Count=("Order ID", "nunique"),
+        )
+    )
+
+    n_nodes = len(all_subcats)
+    angles = np.linspace(0, 2 * np.pi, n_nodes, endpoint=False)
+    coords = {subcat: (float(np.cos(ang)), float(np.sin(ang))) for subcat, ang in zip(all_subcats, angles)}
+
+    subcat_stats["x"] = subcat_stats["Sub-Category"].map(lambda s: coords.get(s, (0.0, 0.0))[0])
+    subcat_stats["y"] = subcat_stats["Sub-Category"].map(lambda s: coords.get(s, (0.0, 0.0))[1])
+
+    s_min = float(subcat_stats["Total_Sales"].min())
+    s_max = float(subcat_stats["Total_Sales"].max())
+    if s_max > s_min:
+        subcat_stats["node_size"] = 18.0 + (subcat_stats["Total_Sales"] - s_min) / (s_max - s_min) * 28.0
+    else:
+        subcat_stats["node_size"] = 28.0
+
+    edges: list[dict[str, Any]] = []
+    for row in filtered_rules.itertuples(index=False):
+        ant, con = str(row.Antecedents), str(row.Consequents)
+        if ant in coords and con in coords:
+            edges.append(
+                {
+                    "source": ant,
+                    "target": con,
+                    "x0": coords[ant][0],
+                    "y0": coords[ant][1],
+                    "x1": coords[con][0],
+                    "y1": coords[con][1],
+                    "support": float(row.Support),
+                    "confidence": float(row.Confidence),
+                    "lift": float(row.Lift),
+                    "orders": int(getattr(row, "Pair_Orders", 0)),
+                }
+            )
+
+    edges_df = pd.DataFrame(edges)
+    return {
+        "nodes": subcat_stats,
+        "edges": edges_df,
+        "subcats": all_subcats,
+        "rule_count": len(edges_df),
+    }
+
+
+def build_sankey_flow_data(df: pd.DataFrame) -> dict[str, Any]:
+    """Tạo cấu trúc luồng giá trị đa tầng (Multi-Stage Sankey Flow):
+    Khu vực (Region) -> Ngành hàng (Category) -> Hình thức giao hàng (Ship Mode) -> Kết quả (Lãi / Lỗ).
+    """
+    if df.empty:
+        return {
+            "labels": [],
+            "sources": [],
+            "targets": [],
+            "values": [],
+            "node_colors": [],
+            "link_colors": [],
+        }
+
+    temp = df.copy()
+    temp["Outcome"] = np.where(temp["Profit"] >= 0, "🟢 Sinh lời (Profit ≥ $0)", "🔴 Thua lỗ (Profit < $0)")
+
+    regions = sorted(temp["Region"].unique().tolist())
+    categories = sorted(temp["Category"].unique().tolist())
+    ship_modes = sorted(temp["Ship Mode"].unique().tolist())
+    outcomes = ["🟢 Sinh lời (Profit ≥ $0)", "🔴 Thua lỗ (Profit < $0)"]
+
+    all_labels = regions + categories + ship_modes + outcomes
+    label_to_idx = {name: i for i, name in enumerate(all_labels)}
+
+    palette = {
+        "West": "#1d4ed8",
+        "East": "#0f766e",
+        "Central": "#dc2626",
+        "South": "#7c3aed",
+        "Technology": "#2563eb",
+        "Office Supplies": "#0d9488",
+        "Furniture": "#f59e0b",
+        "Standard Class": "#64748b",
+        "Second Class": "#0284c7",
+        "First Class": "#e11d48",
+        "Same Day": "#8b5cf6",
+        "🟢 Sinh lời (Profit ≥ $0)": "#16a34a",
+        "🔴 Thua lỗ (Profit < $0)": "#dc2626",
+    }
+    node_colors = [palette.get(lbl, "#64748b") for lbl in all_labels]
+
+    sources: list[int] = []
+    targets: list[int] = []
+    values: list[float] = []
+    link_colors: list[str] = []
+
+    f1 = temp.groupby(["Region", "Category"], as_index=False)["Sales"].sum()
+    for reg, cat, s in zip(f1["Region"], f1["Category"], f1["Sales"]):
+        sources.append(label_to_idx[reg])
+        targets.append(label_to_idx[cat])
+        values.append(float(s))
+        link_colors.append("rgba(148, 163, 184, 0.35)")
+
+    f2 = temp.groupby(["Category", "Ship Mode"], as_index=False)["Sales"].sum()
+    for cat, sm, s in zip(f2["Category"], f2["Ship Mode"], f2["Sales"]):
+        sources.append(label_to_idx[cat])
+        targets.append(label_to_idx[sm])
+        values.append(float(s))
+        link_colors.append("rgba(203, 213, 225, 0.40)")
+
+    f3 = temp.groupby(["Ship Mode", "Outcome"], as_index=False)["Sales"].sum()
+    for sm, out, s in zip(f3["Ship Mode"], f3["Outcome"], f3["Sales"]):
+        sources.append(label_to_idx[sm])
+        targets.append(label_to_idx[out])
+        values.append(float(s))
+        if "Sinh lời" in str(out):
+            link_colors.append("rgba(22, 163, 74, 0.45)")
+        else:
+            link_colors.append("rgba(220, 38, 38, 0.45)")
+
+    return {
+        "labels": all_labels,
+        "sources": sources,
+        "targets": targets,
+        "values": values,
+        "node_colors": node_colors,
+        "link_colors": link_colors,
+    }
+
+
+def compute_customer_churn_scorecard(df: pd.DataFrame) -> dict[str, Any]:
+    """Xây dựng Hệ thống Thẻ điểm Cảnh báo Sớm Nguy cơ Khách hàng Rời bỏ (Customer Churn Risk Scorecard).
+
+    Phân loại ma trận 4 nhóm hành động dựa trên Monetary và Rủi ro rời bỏ Churn Risk.
+    """
+    if df.empty:
+        return {"customers": pd.DataFrame(), "summary": {}, "at_risk_vip": pd.DataFrame()}
+
+    clv_df = compute_clv_and_churn(df)
+    if clv_df.empty:
+        return {"customers": pd.DataFrame(), "summary": {}, "at_risk_vip": pd.DataFrame()}
+
+    median_monetary = float(clv_df["Monetary"].median())
+
+    mon = clv_df["Monetary"].to_numpy()
+    churn = clv_df["Churn_Risk_Pct"].to_numpy()
+    conds = [
+        (mon >= median_monetary) & (churn <= 40.0),
+        (mon >= median_monetary) & (churn > 40.0),
+        (mon < median_monetary) & (churn <= 40.0),
+    ]
+    choices = [
+        "💎 VIP An toàn (Duy trì & Upsell)",
+        "🚨 VIP Nguy cơ Rời bỏ (Cứu vãn Khẩn cấp)",
+        "🌿 Khách Mới / Tiềm năng (Nurturing)",
+    ]
+    clv_df["Action_Tier"] = np.select(conds, choices, default="💤 Ngủ đông / Nguy cơ Mất (Email tự động)")
+
+    tier_counts = clv_df["Action_Tier"].value_counts().to_dict()
+    tier_revenue = clv_df.groupby("Action_Tier")["Monetary"].sum().to_dict()
+
+    at_risk_vip = (
+        clv_df[clv_df["Action_Tier"] == "🚨 VIP Nguy cơ Rời bỏ (Cứu vãn Khẩn cấp)"]
+        .sort_values("Monetary", ascending=False)
+        .head(10)
+    )
+
+    total_customers = len(clv_df)
+    total_rev_at_risk = float(clv_df["Revenue_At_Risk"].sum())
+    high_risk_cust = int((clv_df["Churn_Risk_Pct"] > 50.0).sum())
+
+    summary = {
+        "total_customers": total_customers,
+        "median_monetary": median_monetary,
+        "total_revenue_at_risk": total_rev_at_risk,
+        "high_risk_customers_count": high_risk_cust,
+        "high_risk_rate_pct": (high_risk_cust / total_customers * 100.0) if total_customers else 0.0,
+        "tier_counts": tier_counts,
+        "tier_revenue": tier_revenue,
+    }
+
+    return {
+        "customers": clv_df,
+        "summary": summary,
+        "at_risk_vip": at_risk_vip,
+    }
+
+
+def detect_multivariate_anomalies(
+    df: pd.DataFrame,
+    contamination: float = 0.02,
+) -> dict[str, Any]:
+    """Phát hiện các đơn hàng bất thường đa biến bằng thuật toán Học máy không giám sát Isolation Forest.
+
+    Phân tích trên không gian 5 chiều: [Sales, Profit, Discount, Quantity, Shipping_Days].
+    """
+    if len(df) < 50:
+        return {"data": pd.DataFrame(), "anomalies": pd.DataFrame(), "metrics": {}}
+
+    from sklearn.ensemble import IsolationForest
+    from sklearn.preprocessing import StandardScaler
+
+    features = ["Sales", "Profit", "Discount", "Quantity", "Shipping_Days"]
+    X = df[features].fillna(0).copy()
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    iso = IsolationForest(contamination=contamination, random_state=42, n_estimators=100, n_jobs=-1)
+    preds = iso.fit_predict(X_scaled)
+    scores = iso.decision_function(X_scaled)
+
+    result_df = df.copy()
+    result_df["Is_Anomaly"] = preds == -1
+    result_df["Anomaly_Score"] = np.round(scores, 4)
+
+    anomalies = result_df[result_df["Is_Anomaly"]].copy()
+
+    def diagnose_anomaly_fast(s: float, p: float, d: float, q: int, sd: int) -> str:
+        if d >= 0.5 and p < -500:
+            return f"Bẫy chiết khấu cực đại ({d*100:.0f}%) gây thua lỗ sâu (${p:,.0f})"
+        elif s > 5000 and p > 1000:
+            return f"Giao dịch B2B quy mô siêu lớn (${s:,.0f}, lãi ${p:,.0f})"
+        elif p < -1000:
+            return f"Khoản lỗ ròng đột biến (${p:,.0f})"
+        elif q >= 12:
+            return f"Số lượng mua số lượng lớn bất thường ({q} chiếc)"
+        elif sd >= 6:
+            return f"Thời gian giao hàng trễ nghiêm trọng ({sd} ngày)"
+        else:
+            return "Sai lệch đa biến bất thường (Sales, Profit, Discount)"
+
+    if not anomalies.empty:
+        anomalies["Nguyen_nhan_bat_thuong"] = [
+            diagnose_anomaly_fast(float(s), float(p), float(d), int(q), int(sd))
+            for s, p, d, q, sd in zip(
+                anomalies["Sales"],
+                anomalies["Profit"],
+                anomalies["Discount"],
+                anomalies["Quantity"],
+                anomalies["Shipping_Days"],
+            )
+        ]
+
+    metrics = {
+        "total_analyzed": len(df),
+        "anomalies_count": len(anomalies),
+        "anomaly_rate_pct": (len(anomalies) / len(df) * 100.0) if len(df) else 0.0,
+        "total_anomalous_loss": float(anomalies[anomalies["Profit"] < 0]["Profit"].sum()) if not anomalies.empty else 0.0,
+        "total_anomalous_sales": float(anomalies["Sales"].sum()) if not anomalies.empty else 0.0,
+    }
+
+    return {
+        "data": result_df,
+        "anomalies": anomalies.sort_values("Anomaly_Score", ascending=True),
+        "metrics": metrics,
+    }
+
+
+def compute_regional_radar_metrics(df: pd.DataFrame) -> dict[str, Any]:
+    """Tính toán 5 chỉ số năng lực vận hành (0 - 100 điểm) để vẽ biểu đồ Radar Chart so sánh 4 vùng.
+
+    1. Doanh thu thuần (Sales Score)
+    2. Biên lợi nhuận (Profit Margin Score)
+    3. Tỷ lệ đơn hàng sinh lời (Win Rate % Score)
+    4. Tốc độ giao vận (Fulfillment Speed Score)
+    5. Kỷ luật chiết khấu (Discount Discipline Score)
+    """
+    if df.empty:
+        return {"scores": pd.DataFrame(), "dimensions": []}
+
+    dims = [
+        "Quy mô Doanh thu",
+        "Biên Lợi nhuận",
+        "Tỷ lệ Đơn Lãi",
+        "Tốc độ Giao vận",
+        "Kỷ luật Chiết khấu",
+    ]
+
+    reg_df = (
+        df.groupby("Region", as_index=False)
+        .agg(
+            Sales=("Sales", "sum"),
+            Profit=("Profit", "sum"),
+            Orders=("Order ID", "nunique"),
+            Win_Orders=("Profit", lambda p: int((p >= 0).sum())),
+            Total_Rows=("Order ID", "count"),
+            Avg_Shipping_Days=("Shipping_Days", "mean"),
+            Avg_Discount=("Discount", "mean"),
+        )
+    )
+
+    max_sales = float(reg_df["Sales"].max()) if not reg_df.empty else 1.0
+
+    scores_list: list[dict[str, Any]] = []
+    for row in reg_df.itertuples(index=False):
+        reg = str(row.Region)
+        s_val = float(row.Sales)
+        p_val = float(row.Profit)
+        margin_pct = (p_val / s_val * 100.0) if s_val else 0.0
+        win_rate = (float(row.Win_Orders) / max(float(row.Total_Rows), 1.0)) * 100.0
+        ship_days = float(row.Avg_Shipping_Days)
+        disc = float(row.Avg_Discount)
+
+        sales_score = min(100.0, max(0.0, (s_val / max(max_sales, 1.0)) * 100.0))
+        margin_score = min(100.0, max(0.0, (margin_pct / 15.0) * 100.0))
+        win_score = min(100.0, max(0.0, win_rate))
+        ship_score = min(100.0, max(0.0, 100.0 - (ship_days / 6.0) * 100.0))
+        disc_score = min(100.0, max(0.0, 100.0 - (disc / 0.30) * 100.0))
+
+        scores_list.append(
+            {
+                "Region": reg,
+                "Quy mô Doanh thu": round(sales_score, 1),
+                "Biên Lợi nhuận": round(margin_score, 1),
+                "Tỷ lệ Đơn Lãi": round(win_score, 1),
+                "Tốc độ Giao vận": round(ship_score, 1),
+                "Kỷ luật Chiết khấu": round(disc_score, 1),
+                "Diem_Tong_Hop": round(
+                    (sales_score + margin_score + win_score + ship_score + disc_score) / 5.0, 1
+                ),
+                "Thuc_Te_Doanh_Thu": s_val,
+                "Thuc_Te_Bien_LN": margin_pct,
+                "Thuc_Te_Chiet_Khau": disc * 100.0,
+                "Thuc_Te_Giao_Hang": ship_days,
+            }
+        )
+
+    return {
+        "scores": pd.DataFrame(scores_list).sort_values("Diem_Tong_Hop", ascending=False).reset_index(drop=True),
+        "dimensions": dims,
+    }
+
+
+def generate_regional_action_playbook(radar_df: pd.DataFrame) -> list[dict[str, Any]]:
+    """Tạo Sổ tay Khuyến nghị Chiến lược Điều hành Tự động (Automated Strategic Action Playbook) cho từng vùng dựa trên điểm Radar."""
+    if radar_df.empty:
+        return []
+
+    playbook = []
+    for row in radar_df.to_dict("records"):
+        reg = str(row["Region"])
+        disc_score = float(row.get("Kỷ luật Chiết khấu", row.get("Kỷ_luật_Chiết_khấu", 70.0)))
+        margin_score = float(row.get("Biên Lợi nhuận", row.get("Biên_Lợi_nhuận", 70.0)))
+        win_score = float(row.get("Tỷ lệ Đơn Lãi", row.get("Tỷ_lệ_Đơn_Lãi", 70.0)))
+        ship_score = float(row.get("Tốc độ Giao vận", row.get("Tốc_độ_Giao_vận", 70.0)))
+        sales_score = float(row.get("Quy mô Doanh thu", row.get("Quy_mô_Doanh_thu", 70.0)))
+        actual_shipping = float(row.get("Thuc_Te_Giao_Hang", 4.0))
+
+        actions: list[str] = []
+        status = "Vận hành Tốt"
+        badge_color = "#16a34a"
+
+        if disc_score < 60.0 or margin_score < 50.0:
+            status = "Cần chấn chỉnh khẩn cấp"
+            badge_color = "#dc2626"
+            actions.append("🚨 **Áp trần chiết khấu ngay lập tức**: Giới hạn tối đa 20% cho nhóm hàng bàn ghế (Tables) và đóng gáy (Binders).")
+            actions.append("🔍 **Kiểm soát giá bán tại bang trọng điểm**: Rà soát hợp đồng B2B tại Texas/Illinois để ngăn tình trạng bán dưới giá vốn.")
+
+        if ship_score < 70.0:
+            actions.append(f"🚚 **Tối ưu hóa Logistics**: Rút ngắn thời gian giao hàng từ {actual_shipping:.1f} ngày xuống dưới 3.8 ngày bằng kho trung chuyển vùng.")
+
+        if win_score < 80.0:
+            actions.append("📦 **Chính sách MOQ (Số lượng đặt tối thiểu)**: Áp dụng đơn hàng tối thiểu với vật tư văn phòng phẩm nhỏ lẻ để bù đắp chi phí đóng gói.")
+
+        if sales_score < 60.0 and margin_score >= 60.0:
+            actions.append("📈 **Mở rộng thị phần & B2B Pipeline**: Vùng có biên lợi nhuận tốt nhưng quy mô doanh thu còn khiêm tốn; tăng ngân sách marketing.")
+
+        if not actions:
+            actions.append("✨ **Duy trì vận hành chuẩn mực**: Vùng đang đạt hiệu suất tối ưu; chuẩn hóa quy trình để nhân rộng sang các khu vực khác.")
+
+        playbook.append(
+            {
+                "region": reg,
+                "overall_score": float(row.get("Diem_Tong_Hop", 70.0)),
+                "status": status,
+                "badge_color": badge_color,
+                "actions": actions,
+                "actual_margin": float(row.get("Thuc_Te_Bien_LN", 0.0)),
+                "actual_discount": float(row.get("Thuc_Te_Chiet_Khau", 0.0)),
+            }
+        )
+    return playbook
+
+
+def generate_smart_cross_sell_bundles(
+    df: pd.DataFrame,
+    min_lift: float = 1.1,
+    top_n: int = 5,
+) -> pd.DataFrame:
+    """Tạo đề xuất các Gói Combo Bán chéo Tối ưu (Smart Cross-Sell Bundles) kèm dự phóng doanh thu gia tăng."""
+    rules = run_market_basket_apriori(df, item_col="Sub-Category", min_support=0.010, min_confidence=0.15)
+    if rules.empty:
+        return pd.DataFrame()
+
+    simple = rules[
+        (~rules["Antecedents"].str.contains(",")) & (~rules["Consequents"].str.contains(","))
+    ].copy()
+    simple = simple[simple["Lift"] >= min_lift].sort_values("Lift", ascending=False).reset_index(drop=True)
+    if simple.empty:
+        return pd.DataFrame()
+
+    sub_aov = df.groupby("Sub-Category")["Sales"].mean().to_dict()
+
+    bundles: list[dict[str, Any]] = []
+    seen_pairs: set[tuple[str, str]] = set()
+
+    for row in simple.itertuples(index=False):
+        ant, con = str(row.Antecedents), str(row.Consequents)
+        canonical = tuple(sorted([ant, con]))
+        if canonical in seen_pairs:
+            continue
+        seen_pairs.add(canonical)
+
+        aov_a = sub_aov.get(ant, 100.0)
+        aov_b = sub_aov.get(con, 100.0)
+        combined_price = aov_a + aov_b
+        bundle_discount = 0.08
+        bundle_price = combined_price * (1.0 - bundle_discount)
+
+        pair_orders = int(getattr(row, "Pair_Orders", 50))
+        projected_incremental_sales = round(pair_orders * 0.25 * bundle_price, 2)
+
+        bundles.append(
+            {
+                "Sản phẩm chính (Anchor)": ant,
+                "Sản phẩm mua kèm (Cross-Sell)": con,
+                "Độ gắn kết (Lift)": round(float(row.Lift), 2),
+                "Xác suất mua kèm (Confidence)": f"{float(row.Confidence)*100:.1f}%",
+                "Đơn hàng hiện tại": pair_orders,
+                "Giá gốc 2 món ($)": round(combined_price, 2),
+                "Giá đề xuất Combo ($)": round(bundle_price, 2),
+                "Doanh thu gia tăng dự phóng ($)": projected_incremental_sales,
+                "Đề xuất tiếp thị": f"Tặng voucher giảm 8% cho {con} khi mua {ant}",
+            }
+        )
+        if len(bundles) >= top_n:
+            break
+
+    return pd.DataFrame(bundles)
+
+
+def calculate_profit_goal_seek(
+    df: pd.DataFrame,
+    target_profit_increase_pct: float = 15.0,
+) -> dict[str, Any]:
+    """Bộ công cụ Tính ngược Mục tiêu Lợi nhuận (Goal-Seeking Profit Optimization).
+
+    Tìm trần chiết khấu tối đa (Optimal Discount Cap) cần thiết để đạt mức tăng trưởng lợi nhuận mục tiêu.
+    """
+    if df.empty:
+        return {"target_met": False, "recommended_cap": 0.20, "summary": {}}
+
+    actual_sales = float(df["Sales"].sum())
+    actual_profit = float(df["Profit"].sum())
+    target_profit = actual_profit * (1.0 + target_profit_increase_pct / 100.0)
+    needed_profit_delta = target_profit - actual_profit
+
+    best_cap = 0.20
+    best_sim: dict[str, Any] = {}
+    found = False
+
+    for cap_candidate in np.arange(0.35, 0.09, -0.01):
+        sim = simulate_discount_what_if(
+            df,
+            max_discount_cap=float(cap_candidate),
+            loss_subcat_uplift_pct=3.0,
+            price_elasticity=-0.5,
+        )
+        if sim["sim_profit"] >= target_profit:
+            best_cap = round(float(cap_candidate), 2)
+            best_sim = sim
+            found = True
+            break
+
+    if not found:
+        best_cap = 0.12
+        best_sim = simulate_discount_what_if(
+            df,
+            max_discount_cap=best_cap,
+            loss_subcat_uplift_pct=5.0,
+            price_elasticity=-0.5,
+        )
+
+    return {
+        "target_met": found,
+        "target_increase_pct": target_profit_increase_pct,
+        "actual_sales": actual_sales,
+        "actual_profit": actual_profit,
+        "target_profit": target_profit,
+        "needed_profit_delta": needed_profit_delta,
+        "recommended_cap": best_cap,
+        "recommended_cap_pct": f"{best_cap*100:.0f}%",
+        "sim_profit": best_sim.get("sim_profit", actual_profit),
+        "sim_sales": best_sim.get("sim_sales", actual_sales),
+        "profit_gain": best_sim.get("profit_gain", 0.0),
+        "saved_loss": best_sim.get("saved_loss", 0.0),
+        "sim_margin_pct": best_sim.get("sim_margin_pct", 0.0),
+    }
+
 
 
 

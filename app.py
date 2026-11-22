@@ -147,8 +147,8 @@ nav1, nav2, nav3, nav4, nav5 = st.columns(5)
 
 with nav1:
     with st.container(border=True):
-        st.markdown("#### 📊 Page 1\n**Tổng quan, Thống kê & CLV**")
-        st.caption("KPI cốt lõi, Grouped/Stacked Bar, Histogram/Boxplot, Kiểm định giả thuyết (t-test/ANOVA/Kruskal), RFM + CLV 12M & K-Means 3D.")
+        st.markdown("#### 📊 Page 1\n**Tổng quan, Sankey & Churn Risk**")
+        st.caption("KPI cốt lõi, Luồng giá trị Sankey, Kiểm định giả thuyết, RFM + CLV 12M, Cảnh báo sớm Khách rời bỏ & K-Means 3D.")
         st.page_link("pages/1_Tong_Quan_Kinh_Doanh.py", label="Mở Page 1 →", icon="📊", use_container_width=True)
 
 with nav2:
@@ -159,20 +159,20 @@ with nav2:
 
 with nav3:
     with st.container(border=True):
-        st.markdown("#### 🗺️ Page 3\n**Khu vực & Bản đồ Mỹ**")
-        st.caption("Choropleth Map 49 bang, Khoan sâu Central & Chẩn đoán Tiểu bang tương tác (Texas), Ma trận Tứ phân vị, A/B Vùng & SLA.")
+        st.markdown("#### 🗺️ Page 3\n**Khu vực, Bản đồ & Radar 4 Vùng**")
+        st.caption("Radar Chart năng lực vận hành 4 vùng, Choropleth Map 49 bang, Chẩn đoán tương tác (Texas) & Ma trận Tứ phân vị.")
         st.page_link("pages/3_Phan_Tich_Khu_Vuc.py", label="Mở Page 3 →", icon="🗺️", use_container_width=True)
 
 with nav4:
     with st.container(border=True):
-        st.markdown("#### 🏆 Page 4\n**Sản phẩm & Giỏ hàng**")
-        st.caption("Top N Doanh thu / Lãi / Lỗ, Sunburst/Treemap 3 tầng, Ma trận Nhiệt Lift Apriori, Gợi ý Combo Bán kèm & Pareto 80/20.")
+        st.markdown("#### 🏆 Page 4\n**Sản phẩm & Đồ thị Mạng lưới**")
+        st.caption("Network Graph liên kết bán kèm Apriori, Top N Lãi/Lỗ, Sunburst 3 tầng, Ma trận Heatmap Lift & Pareto 80/20.")
         st.page_link("pages/4_Phan_Tich_San_Pham.py", label="Mở Page 4 →", icon="🏆", use_container_width=True)
 
 with nav5:
     with st.container(border=True):
-        st.markdown("#### ✨ Page 5\n**Kinh tế lượng, ML & AI**")
-        st.caption("Biểu đồ kép Chiết khấu, What-If Độ co giãn cầu (ε), Học máy Giải thích Rủi ro Lỗ (RF/Logit), Xuất HTML/PDF & Trợ lý AI.")
+        st.markdown("#### ✨ Page 5\n**Isolation Forest, ML & AI**")
+        st.caption("Phát hiện bất thường Isolation Forest (Parallel Coordinates), What-If Độ co giãn cầu (ε), Explainable ML & Trợ lý AI.")
         st.page_link("pages/5_Trai_Nghiem_Nguoi_Dung.py", label="Mở Page 5 →", icon="✨", use_container_width=True)
 
 st.divider()

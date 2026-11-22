@@ -6,14 +6,20 @@ import pandas as pd
 
 from data.analytics import (
     analyze_timeseries_stationarity,
+    build_apriori_network_elements,
     build_executive_html_report,
+    build_sankey_flow_data,
+    calculate_profit_goal_seek,
     compare_groups_ab,
     compute_apriori_lift_matrix,
     compute_clv_and_churn,
     compute_cohort_retention,
     compute_correlation_comparison,
+    compute_customer_churn_scorecard,
     compute_elasticity_curve,
     compute_kmeans_clusters,
+    compute_regional_radar_metrics,
+    detect_multivariate_anomalies,
     evaluate_forecast_holdout,
     compute_pareto_abc,
     compute_rfm_segments,
@@ -22,6 +28,8 @@ from data.analytics import (
     detect_loss_anomalies,
     forecast_monthly_sales,
     generate_dynamic_insight,
+    generate_regional_action_playbook,
+    generate_smart_cross_sell_bundles,
     pivot_region_category,
     pivot_year_segment,
     run_hypothesis_tests,
@@ -214,6 +222,60 @@ def test_scientific_modules() -> None:
 
     lift_mat = compute_apriori_lift_matrix(clean, item_col="Sub-Category")
     assert not lift_mat.empty and lift_mat.shape[0] >= 5
+
+
+def test_new_five_features() -> None:
+    clean = _get_clean_df()
+
+    # 1. Product Affinity Network Graph
+    rules = run_market_basket_apriori(clean, item_col="Sub-Category", min_support=0.015, min_confidence=0.2)
+    net_data = build_apriori_network_elements(rules, clean, min_lift=0.95)
+    assert not net_data["nodes"].empty
+    assert "node_size" in net_data["nodes"].columns
+    assert "x" in net_data["nodes"].columns and "y" in net_data["nodes"].columns
+    assert not net_data["edges"].empty
+
+    # 2. Multi-stage Sankey Flow Data
+    sankey = build_sankey_flow_data(clean)
+    assert len(sankey["labels"]) > 0
+    assert len(sankey["sources"]) == len(sankey["targets"]) == len(sankey["values"])
+    assert any("Sinh lời" in lbl for lbl in sankey["labels"])
+
+    # 3. Customer Churn Scorecard & Action Matrix
+    churn_sc = compute_customer_churn_scorecard(clean)
+    assert not churn_sc["customers"].empty
+    assert "Action_Tier" in churn_sc["customers"].columns
+    assert churn_sc["summary"]["total_customers"] == 793
+    assert not churn_sc["at_risk_vip"].empty
+
+    # 4. Multivariate Anomaly Detection (Isolation Forest)
+    anom = detect_multivariate_anomalies(clean, contamination=0.02)
+    assert not anom["anomalies"].empty
+    assert "Nguyen_nhan_bat_thuong" in anom["anomalies"].columns
+    assert anom["metrics"]["anomalies_count"] > 0
+
+    # 5. Regional Operational Health Radar
+    radar = compute_regional_radar_metrics(clean)
+    assert len(radar["scores"]) == 4
+    assert len(radar["dimensions"]) == 5
+    assert "Diem_Tong_Hop" in radar["scores"].columns
+    assert (radar["scores"]["Diem_Tong_Hop"] > 0).all()
+
+    # 6. Regional Action Playbook
+    playbook = generate_regional_action_playbook(radar["scores"])
+    assert len(playbook) == 4
+    assert all("actions" in p and len(p["actions"]) > 0 for p in playbook)
+
+    # 7. Smart Cross-Sell Bundles
+    bundles = generate_smart_cross_sell_bundles(clean, min_lift=1.1, top_n=5)
+    assert not bundles.empty
+    assert "Doanh thu gia tăng dự phóng ($)" in bundles.columns
+
+    # 8. Profit Goal-Seeking Optimization
+    goal = calculate_profit_goal_seek(clean, target_profit_increase_pct=15.0)
+    assert goal["target_profit"] > goal["actual_profit"]
+    assert 0.05 <= goal["recommended_cap"] <= 0.50
+
 
 
 

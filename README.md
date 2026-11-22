@@ -53,13 +53,13 @@ BTL_TQVPTDL/
 │   ├── session_state.py                 # Quản lý state toàn cục (ss_date_range, ss_regions, ...)
 │   └── ui_styles.py                     # Giao diện SaaS CSS & Dynamic Auto-Insight Banner
 ├── pages/
-│   ├── 1_Tong_Quan_Kinh_Doanh.py        # Page 1: KPI, Grouped/Stacked, Histogram/Boxplot, Kiểm định Thống kê, RFM + CLV & K-Means 3D
+│   ├── 1_Tong_Quan_Kinh_Doanh.py        # Page 1: KPI, Luồng Sankey, Histogram/Boxplot, Kiểm định Thống kê, RFM + CLV & Churn Scorecard
 │   ├── 2_Xu_Huong_Doanh_Thu.py          # Page 2: Line + MA-3, Dự báo SARIMAX/Prophet, Hold-out MAE/MAPE, ADF + Decomposition & A/B Năm
-│   ├── 3_Phan_Tich_Khu_Vuc.py           # Page 3: Bar, Bản đồ Mỹ, Khoan sâu Central/Texas, A/B Region Benchmark, SLA & State Quadrant
-│   ├── 4_Phan_Tich_San_Pham.py          # Page 4: Top N, Sunburst/Treemap, Apriori & Pareto 80/20 (ABC)
-│   └── 5_Trai_Nghiem_Nguoi_Dung.py      # Page 5: What-If + Độ co giãn cầu (ε), ML Rủi ro lỗ, Biểu đồ kép Chiết khấu, Xuất HTML/PDF & AI
+│   ├── 3_Phan_Tich_Khu_Vuc.py           # Page 3: Radar Chart 4 Vùng, Bản đồ Mỹ, Khoan sâu Texas, A/B Benchmark & State Quadrant
+│   ├── 4_Phan_Tich_San_Pham.py          # Page 4: Network Graph bán kèm, Top N, Sunburst/Treemap, Apriori & Pareto 80/20 (ABC)
+│   └── 5_Trai_Nghiem_Nguoi_Dung.py      # Page 5: Isolation Forest bất thường đa biến, What-If (ε), ML Rủi ro lỗ & Trợ lý AI B2B
 ├── tests/
-│   └── test_analytics.py                # 5 bộ Unit tests kiểm thử toàn diện (pytest)
+│   └── test_analytics.py                # 6 bộ Unit tests kiểm thử toàn diện (pytest)
 ├── .github/workflows/
 │   └── ci.yml                           # GitHub Actions kiểm tra cú pháp & chạy unit tests tự động
 ├── notebooks/
@@ -81,10 +81,10 @@ BTL_TQVPTDL/
 
 | Trang Dashboard | Tệp mã nguồn | Thành viên | Yêu cầu trực quan hóa & Tính năng chính |
 | :--- | :--- | :--- | :--- |
-| **Page 1** | [`pages/1_Tong_Quan_Kinh_Doanh.py`](pages/1_Tong_Quan_Kinh_Doanh.py) | *[Sinh viên 1]* | KPI (`st.metric`), **Grouped/Stacked Bar**, **Histogram & Boxplot**, **Kiểm định giả thuyết ($t$-test, ANOVA, Kruskal, Spearman)**, **RFM & CLV 12M**, **Cohort** & **K-Means 3D (Elbow/Silhouette)** |
+| **Page 1** | [`pages/1_Tong_Quan_Kinh_Doanh.py`](pages/1_Tong_Quan_Kinh_Doanh.py) | *[Sinh viên 1]* | KPI (`st.metric`), **Luồng giá trị Sankey**, **Grouped/Stacked Bar**, **Kiểm định giả thuyết ($t$-test, ANOVA, Kruskal)**, **RFM + CLV 12M** & **Thẻ điểm Cảnh báo Churn Risk** |
 | **Page 2** | [`pages/2_Xu_Huong_Doanh_Thu.py`](pages/2_Xu_Huong_Doanh_Thu.py) | *[Sinh viên 2]* | **Xu hướng thời gian** (Line + MA-3), **Dự báo SARIMAX/Prophet**, **Hold-out MAE/MAPE**, **Kiểm định tính dừng ADF & Phân rã 4 tầng**, **Seasonality**, **YoY Waterfall** & **A/B Year Benchmark** |
-| **Page 3** | [`pages/3_Phan_Tich_Khu_Vuc.py`](pages/3_Phan_Tich_Khu_Vuc.py) | *[Sinh viên 3]* | **So sánh khu vực** (Bar), `st.multiselect`, **Choropleth Hoa Kỳ**, **Khoan sâu Central & Texas**, **A/B Region Benchmark**, **Shipping SLA** & **State Quadrant** |
-| **Page 4 & 5** | [`pages/4_Phan_Tich_San_Pham.py`](pages/4_Phan_Tich_San_Pham.py)<br>[`pages/5_Trai_Nghiem_Nguoi_Dung.py`](pages/5_Trai_Nghiem_Nguoi_Dung.py) | *[Sinh viên 4]* *(cùng nhóm tích hợp)* | Top N, **Sunburst/Treemap**, **Apriori**, **Pareto 80/20**, **What-If + Độ co giãn cầu ($\epsilon$)**, **ML Dự báo Rủi ro Lỗ (RF/Logit)**, **Biểu đồ kép Ngưỡng Chiết khấu**, **Xuất Báo cáo HTML/PDF** & **Trợ lý AI B2B** |
+| **Page 3** | [`pages/3_Phan_Tich_Khu_Vuc.py`](pages/3_Phan_Tich_Khu_Vuc.py) | *[Sinh viên 3]* | **Radar Chart 4 Vùng**, **So sánh khu vực** (Bar), `st.multiselect`, **Choropleth Hoa Kỳ**, **Khoan sâu Central & Texas**, **A/B Region Benchmark**, **Shipping SLA** & **State Quadrant** |
+| **Page 4 & 5** | [`pages/4_Phan_Tich_San_Pham.py`](pages/4_Phan_Tich_San_Pham.py)<br>[`pages/5_Trai_Nghiem_Nguoi_Dung.py`](pages/5_Trai_Nghiem_Nguoi_Dung.py) | *[Sinh viên 4]* *(cùng nhóm tích hợp)* | **Network Graph Bán kèm**, Top N, **Sunburst**, **Apriori**, **Isolation Forest Bất thường Đa biến**, **What-If + Độ co giãn cầu ($\epsilon$)**, **ML Dự báo Rủi ro Lỗ**, **Xuất Báo cáo HTML/PDF** & **Trợ lý AI B2B** |
 
 ---
 

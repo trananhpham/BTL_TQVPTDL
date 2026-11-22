@@ -37,6 +37,36 @@ def cached_holdout(data: pd.DataFrame) -> pd.DataFrame:
     return evaluate_forecast_holdout(data, holdout_months=6)
 
 
+@st.cache_data(show_spinner=False)
+def cached_stationarity(data: pd.DataFrame) -> dict:
+    """Cache kết quả kiểm định tính dừng ADF và phân rã chuỗi thời gian."""
+    return analyze_timeseries_stationarity(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_seasonality(data: pd.DataFrame, metric: str) -> pd.DataFrame:
+    """Cache ma trận mùa vụ năm x tháng."""
+    return compute_seasonality_matrix(data, metric=metric)
+
+
+@st.cache_data(show_spinner=False)
+def cached_waterfall(data: pd.DataFrame, metric: str) -> pd.DataFrame:
+    """Cache biến động tăng trưởng Waterfall."""
+    return compute_yoy_waterfall(data, metric=metric)
+
+
+@st.cache_data(show_spinner=False)
+def cached_compare_ab(data: pd.DataFrame, col: str, val_a: object, val_b: object) -> pd.DataFrame:
+    """Cache so sánh đối chứng A/B."""
+    return compare_groups_ab(data, col, val_a, val_b)
+
+
+@st.cache_data(show_spinner=False)
+def cached_summarize_time(data: pd.DataFrame, freq: str) -> pd.DataFrame:
+    """Cache tổng hợp doanh thu theo chu kỳ thời gian."""
+    return summarize_by_time(data, freq=freq)
+
+
 st.title("📈 Page 2: Xu hướng doanh thu & Dự báo tương lai")
 st.caption("Theo dõi doanh thu lịch sử bằng biểu đồ đường Plotly và dự báo 3–6 tháng tiếp theo (Prophet / ARIMA).")
 
@@ -94,7 +124,7 @@ if df_filtered.empty:
 render_dynamic_insight_banner(df_filtered)
 
 freq_code = {"Tháng": "M", "Quý": "Q", "Năm": "Y"}[granularity]
-time_df = summarize_by_time(df_filtered, freq=freq_code)
+time_df = cached_summarize_time(df_filtered, freq=freq_code)
 
 k1, k2, k3 = st.columns(3)
 k1.metric("Doanh thu giai đoạn", format_usd(time_df["Total_Sales"].sum()))
@@ -246,7 +276,7 @@ st.caption(
     "Chứng minh cơ sở toán học của tham số sai phân bậc 1 (d = 1) trong mô hình SARIMAX(1,1,0)(1,1,0,12) "
     "và tách biệt 3 cấu phần: Xu hướng dài hạn (Trend T_t) + Chu kỳ mùa vụ (Seasonal S_t) + Nhiễu ngẫu nhiên (Residual ε_t)."
 )
-ts_diag = analyze_timeseries_stationarity(df_filtered)
+ts_diag = cached_stationarity(df_filtered)
 adf_table = ts_diag.get("adf_table", pd.DataFrame())
 decomp_df = ts_diag.get("decomposition", pd.DataFrame())
 
@@ -307,7 +337,7 @@ season_metric = st.radio(
     options=["Sales", "Profit"],
     horizontal=True,
 )
-season_matrix = compute_seasonality_matrix(df_filtered, metric=season_metric)
+season_matrix = cached_seasonality(df_filtered, metric=season_metric)
 if not season_matrix.empty:
     fig_season = px.imshow(
         season_matrix,
@@ -321,7 +351,7 @@ if not season_matrix.empty:
 
 st.divider()
 st.subheader("📊 Biểu đồ Thác nước Tăng trưởng Qua từng năm (YoY Waterfall)")
-wf_df = compute_yoy_waterfall(df_filtered, metric=season_metric)
+wf_df = cached_waterfall(df_filtered, metric=season_metric)
 if len(wf_df) >= 2:
     fig_wf = go.Figure(
         go.Waterfall(
@@ -352,7 +382,7 @@ if len(avail_years) >= 2:
         yr_a = st.selectbox("Chọn Năm A (Kỳ mục tiêu)", options=avail_years, index=len(avail_years) - 1)
     with ab2:
         yr_b = st.selectbox("Chọn Năm B (Kỳ cơ sở đối chiếu)", options=avail_years, index=max(0, len(avail_years) - 2))
-    ab_yr_df = compare_groups_ab(df_filtered, "Order_Year", yr_a, yr_b)
+    ab_yr_df = cached_compare_ab(df_filtered, "Order_Year", yr_a, yr_b)
     st.dataframe(
         ab_yr_df.style.format(
             {

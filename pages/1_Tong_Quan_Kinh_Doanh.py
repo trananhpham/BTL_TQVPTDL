@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from components.sidebar import init_page, render_global_sidebar
 from data.analytics import (
+    build_sankey_flow_data,
     compute_clv_and_churn,
     compute_cohort_retention,
     compute_correlation_comparison,
+    compute_customer_churn_scorecard,
     compute_kmeans_clusters,
     compute_rfm_segments,
     run_hypothesis_tests,
@@ -54,6 +57,48 @@ def cached_clv(data: pd.DataFrame) -> pd.DataFrame:
     return compute_clv_and_churn(data)
 
 
+@st.cache_data(show_spinner=False)
+def cached_hypothesis_tests(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache kết quả kiểm định giả thuyết thống kê."""
+    return run_hypothesis_tests(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_correlation(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache kết quả đối sánh tương quan Pearson và Spearman."""
+    return compute_correlation_comparison(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_sankey(data: pd.DataFrame) -> dict:
+    """Cache kết quả tính luồng giá trị Sankey."""
+    return build_sankey_flow_data(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_churn_scorecard(data: pd.DataFrame) -> dict:
+    """Cache kết quả thẻ điểm cảnh báo rủi ro rời bỏ khách hàng."""
+    return compute_customer_churn_scorecard(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_cat_summary(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache bảng tổng hợp theo ngành hàng."""
+    return summarize_by_category(data)
+
+
+@st.cache_data(show_spinner=False)
+def cached_cat_df(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache tỷ trọng doanh thu theo ngành hàng."""
+    return data.groupby("Category", as_index=False).agg(Sales=("Sales", "sum"), Profit=("Profit", "sum"))
+
+
+@st.cache_data(show_spinner=False)
+def cached_cat_seg_df(data: pd.DataFrame) -> pd.DataFrame:
+    """Cache doanh thu theo phân khúc và ngành hàng."""
+    return data.groupby(["Segment", "Category"], as_index=False).agg(Sales=("Sales", "sum"), Profit=("Profit", "sum"))
+
+
 st.title("📊 Page 1: Tổng quan kinh doanh & Phân khúc khách hàng (RFM)")
 st.caption("Theo dõi các KPI cốt lõi bằng `st.metric` và phân loại nhóm khách hàng theo mô hình RFM.")
 
@@ -83,12 +128,13 @@ col6.metric("🚚 Thời gian giao hàng TB", f"{df['Shipping_Days'].mean():.1f}
 
 st.divider()
 
-tab_overview, tab_dist, tab_stats, tab_rfm, tab_cohort, tab_kmeans = st.tabs(
+tab_overview, tab_dist, tab_sankey, tab_stats, tab_rfm, tab_cohort, tab_kmeans = st.tabs(
     [
         "📊 Cơ cấu & Biểu đồ Tổng hợp",
         "📉 Phân phối (Histogram & Boxplot)",
+        "🌊 Luồng Giá trị (Sankey)",
         "🧪 Kiểm định Thống kê & Tương quan",
-        "🎯 Phân khúc RFM & Dự báo CLV",
+        "🎯 Phân khúc RFM & Churn Risk",
         "🔁 Cohort Giữ chân Khách hàng",
         "🤖 ML Phân cụm (K-Means 3D)",
     ]
@@ -97,7 +143,7 @@ tab_overview, tab_dist, tab_stats, tab_rfm, tab_cohort, tab_kmeans = st.tabs(
 with tab_overview:
     left, right = st.columns(2)
     with left:
-        cat_df = df.groupby("Category", as_index=False).agg(Sales=("Sales", "sum"), Profit=("Profit", "sum"))
+        cat_df = cached_cat_df(df)
         fig_cat = px.pie(
             cat_df,
             values="Sales",
@@ -117,10 +163,7 @@ with tab_overview:
             horizontal=True,
         )
         barmode_val = "stack" if "Stacked" in bar_mode_choice else "group"
-        cat_seg_df = (
-            df.groupby(["Segment", "Category"], as_index=False)
-            .agg(Sales=("Sales", "sum"), Profit=("Profit", "sum"))
-        )
+        cat_seg_df = cached_cat_seg_df(df)
         fig_seg = px.bar(
             cat_seg_df,
             x="Segment",
@@ -135,7 +178,7 @@ with tab_overview:
         st.plotly_chart(fig_seg, use_container_width=True)
 
     st.subheader("📋 Bảng tổng hợp theo Danh mục (GroupBy)")
-    cat_summary = summarize_by_category(df)
+    cat_summary = cached_cat_summary(df)
     st.dataframe(
         cat_summary.style.format(
             {
@@ -186,13 +229,53 @@ with tab_dist:
         )
         st.plotly_chart(fig_box, use_container_width=True)
 
+with tab_sankey:
+    st.subheader("🌊 Biểu đồ Luồng Giá trị Đa chiều (Multi-Stage Sankey Diagram)")
+    st.caption(
+        "Theo dõi toàn bộ dòng chảy giá trị doanh thu từ Khu vực địa lý (Region) qua Ngành hàng (Category), "
+        "Hình thức giao hàng (Ship Mode) và phân nhánh tới Kết quả tài chính cuối cùng (Sinh lời vs. Thua lỗ)."
+    )
+    sankey_data = cached_sankey(df)
+    if sankey_data["labels"]:
+        fig_sankey = go.Figure(
+            data=[
+                go.Sankey(
+                    node=dict(
+                        pad=16,
+                        thickness=22,
+                        line=dict(color="rgba(0,0,0,0.3)", width=0.5),
+                        label=sankey_data["labels"],
+                        color=sankey_data["node_colors"],
+                    ),
+                    link=dict(
+                        source=sankey_data["sources"],
+                        target=sankey_data["targets"],
+                        value=sankey_data["values"],
+                        color=sankey_data["link_colors"],
+                    ),
+                )
+            ]
+        )
+        fig_sankey.update_layout(
+            title_text="Dòng chảy Doanh thu: Khu vực → Ngành hàng → Vận chuyển → Lãi/Lỗ",
+            font_size=12,
+            height=580,
+            margin=dict(l=10, r=10, t=40, b=20),
+        )
+        st.plotly_chart(fig_sankey, use_container_width=True)
+
+        st.info(
+            "💡 **Insight từ Biểu đồ Luồng (Sankey):** Các dải liên kết màu đỏ (chảy vào Thua lỗ) thể hiện trực quan "
+            "những điểm rò rỉ lợi nhuận lớn nhất hệ thống, đặc biệt tập trung tại ngành hàng Furniture và hình thức Standard Class."
+        )
+
 with tab_stats:
     st.subheader("🧪 Kiểm định Giả thuyết Thống kê (Hypothesis Testing & Effect Size)")
     st.caption(
         "Chứng minh các kết luận kinh doanh bằng kiểm định tham số (Welch's t-test, One-way ANOVA) "
         "kết hợp kiểm định phi tham số (Mann-Whitney U, Kruskal-Wallis) phù hợp với dữ liệu phân phối lệch phải và có ngoại lệ."
     )
-    hyp_df = run_hypothesis_tests(df)
+    hyp_df = cached_hypothesis_tests(df)
     if hyp_df.empty:
         st.info("Tập dữ liệu hiện tại không đủ mẫu để thực hiện kiểm định giả thuyết.")
     else:
@@ -204,7 +287,7 @@ with tab_stats:
         "Do biến Sales và Profit có độ lệch (Skewness) cao, hệ số tương quan hạng Spearman (ρ) phản ánh "
         "mối quan hệ đơn điệu bền vững hơn so với Pearson (r)."
     )
-    corr_comp_df = compute_correlation_comparison(df)
+    corr_comp_df = cached_correlation(df)
     if not corr_comp_df.empty:
         st.dataframe(
             corr_comp_df.style.format(
@@ -339,6 +422,112 @@ with tab_rfm:
             use_container_width=True,
             hide_index=True,
         )
+
+        st.divider()
+        st.subheader("🚨 Thẻ điểm Cảnh báo Sớm Rủi ro Rời bỏ & Ma trận Hành động Khách hàng")
+        st.caption(
+            "Phân loại khách hàng vào 4 nhóm chiến lược dựa trên chi tiêu tích lũy (Monetary) và tỷ lệ rủi ro rời bỏ (Churn Risk). "
+            "Đặc biệt cảnh báo nhóm VIP có nguy cơ mất để can thiệp kịp thời."
+        )
+        scorecard = cached_churn_scorecard(df)
+        sc_sum = scorecard.get("summary", {})
+        sc_vip = scorecard.get("at_risk_vip", pd.DataFrame())
+        sc_cust = scorecard.get("customers", pd.DataFrame())
+
+        if sc_sum and not sc_cust.empty:
+            sc1, sc2, sc3, sc4 = st.columns(4)
+            sc1.metric("👥 Tổng khách hàng", f"{sc_sum['total_customers']:,}")
+            sc2.metric(
+                "⚠️ Khách nguy cơ cao (>50%)",
+                f"{sc_sum['high_risk_customers_count']:,}",
+                delta=f"{sc_sum['high_risk_rate_pct']:.1f}% toàn tập",
+                delta_color="inverse",
+            )
+            sc3.metric("💸 Doanh thu đang bị đe dọa", format_usd(sc_sum["total_revenue_at_risk"]))
+            sc4.metric("🚨 Top VIP cần cứu vãn", f"{len(sc_vip)} khách hàng")
+
+            sc_col_left, sc_col_right = st.columns([1.3, 1.0])
+            with sc_col_left:
+                fig_matrix = px.scatter(
+                    sc_cust,
+                    x="Recency",
+                    y="Monetary",
+                    size="Predicted_12M_CLV",
+                    color="Action_Tier",
+                    hover_name="Customer Name",
+                    hover_data={
+                        "Recency": True,
+                        "Monetary": ":,.2f",
+                        "Churn_Risk_Pct": ":.1f",
+                        "Predicted_12M_CLV": ":,.2f",
+                        "Action_Tier": True,
+                    },
+                    color_discrete_map={
+                        "💎 VIP An toàn (Duy trì & Upsell)": "#16a34a",
+                        "🚨 VIP Nguy cơ Rời bỏ (Cứu vãn Khẩn cấp)": "#dc2626",
+                        "🌿 Khách Mới / Tiềm năng (Nurturing)": "#2563eb",
+                        "💤 Ngủ đông / Nguy cơ Mất (Email tự động)": "#94a3b8",
+                    },
+                    title="Ma trận Chiến lược Khách hàng: Recency (ngày) vs. Monetary (USD)",
+                    labels={
+                        "Recency": "Số ngày từ lần mua cuối",
+                        "Monetary": "Tổng chi tiêu (USD)",
+                        "Action_Tier": "Nhóm hành động",
+                    },
+                    height=450,
+                )
+                fig_matrix.add_hline(
+                    y=sc_sum["median_monetary"],
+                    line_dash="dash",
+                    line_color="gray",
+                    annotation_text="Trung vị Chi tiêu",
+                )
+                fig_matrix.add_vline(
+                    x=180,
+                    line_dash="dot",
+                    line_color="orange",
+                    annotation_text="Ngưỡng 6 tháng",
+                )
+                st.plotly_chart(fig_matrix, use_container_width=True)
+
+            with sc_col_right:
+                st.markdown("#### 📋 Hành động Đề xuất (Action Playbook):")
+                st.markdown(
+                    """
+                    - **💎 VIP An toàn:** Áp dụng chương trình chăm sóc khách hàng VIP riêng, tặng quà tri ân, giới thiệu sản phẩm cao cấp mới.
+                    - **🚨 VIP Nguy cơ Rời bỏ:** Nhân viên CSKH gọi điện trực tiếp thăm hỏi lý do, gửi voucher giảm giá độc quyền 15% để kích hoạt lại đơn hàng ngay.
+                    - **🌿 Khách Mới / Tiềm năng:** Chuỗi email chào mừng, gợi ý combo bán kèm Apriori cho lần đặt hàng thứ 2.
+                    - **💤 Ngủ đông / Nguy cơ Mất:** Chạy chiến dịch email marketing tự động chi phí thấp nhắc nhớ thương hiệu.
+                    """
+                )
+
+            if not sc_vip.empty:
+                st.markdown("##### 🚨 Danh sách Top 10 Khách hàng VIP cần Can thiệp Khẩn cấp:")
+                st.dataframe(
+                    sc_vip[
+                        [
+                            "Customer ID",
+                            "Customer Name",
+                            "Segment",
+                            "Monetary",
+                            "Total_Profit",
+                            "Recency",
+                            "IPT_Days",
+                            "Churn_Risk_Pct",
+                            "Revenue_At_Risk",
+                        ]
+                    ].style.format(
+                        {
+                            "Monetary": "${:,.2f}",
+                            "Total_Profit": "${:,.2f}",
+                            "IPT_Days": "{:.1f} ngày",
+                            "Churn_Risk_Pct": "{:.1f}%",
+                            "Revenue_At_Risk": "${:,.2f}",
+                        }
+                    ),
+                    use_container_width=True,
+                    hide_index=True,
+                )
 
 with tab_cohort:
     st.subheader("🔁 Ma trận giữ chân khách hàng theo Năm gia nhập (Cohort Retention %)")

@@ -112,7 +112,7 @@ def clean_superstore_data(
     cleaned["Order_Year"] = cleaned["Order Date"].dt.year
     cleaned["Order_Month"] = cleaned["Order Date"].dt.month
     cleaned["Order_Quarter"] = cleaned["Order Date"].dt.quarter
-    cleaned["Order_YearMonth"] = cleaned["Order Date"].dt.to_period("M").astype(str)
+    cleaned["Order_YearMonth"] = cleaned["Order Date"].dt.strftime("%Y-%m")
     cleaned["Order_YearQuarter"] = (
         cleaned["Order_Year"].astype(str) + "-Q" + cleaned["Order_Quarter"].astype(str)
     )
@@ -133,20 +133,24 @@ def filter_dataframe(
     categories: list[str] | None = None,
     segments: list[str] | None = None,
 ) -> pd.DataFrame:
-    """Lọc tập dữ liệu theo khoảng thời gian, khu vực, danh mục và phân khúc."""
-    filtered = df
+    """Lọc tập dữ liệu theo khoảng thời gian, khu vực, danh mục và phân khúc bằng mặt nạ boolean vector hóa."""
+    if df.empty:
+        return df
+
+    mask = pd.Series(True, index=df.index)
     if date_range is not None:
         start_dt, end_dt = pd.to_datetime(date_range[0]), pd.to_datetime(date_range[1])
-        filtered = filtered[
-            (filtered["Order Date"] >= start_dt) & (filtered["Order Date"] <= end_dt)
-        ]
-    if regions is not None:
-        filtered = filtered[filtered["Region"].isin(regions)]
-    if categories is not None:
-        filtered = filtered[filtered["Category"].isin(categories)]
-    if segments is not None:
-        filtered = filtered[filtered["Segment"].isin(segments)]
-    return filtered
+        mask &= (df["Order Date"] >= start_dt) & (df["Order Date"] <= end_dt)
+    if regions is not None and len(regions) < 4:
+        mask &= df["Region"].isin(regions)
+    if categories is not None and len(categories) < 3:
+        mask &= df["Category"].isin(categories)
+    if segments is not None and len(segments) < 3:
+        mask &= df["Segment"].isin(segments)
+
+    if mask.all():
+        return df
+    return df[mask]
 
 
 def get_cached_superstore_data(
